@@ -63,7 +63,8 @@ function Shell({ user }) {
 
   // Jornadas previstas (pedidas) aparte: todas las sumas y cobros usan solo las hechas
   // Jornadas pedidas (prevista → aceptada) aparte: todas las sumas y cobros usan solo las hechas
-  const isPending = (w) => w.status === 'prevista' || w.status === 'aceptada'
+  // Solo las pedidas sin aceptar van aparte; en cuanto se aceptan son jornadas del mes
+  const isPending = (w) => w.status === 'prevista'
   const planned = data.workdays.filter(isPending).sort((a, b) => a.date.localeCompare(b.date))
   const ctx = {
     data: { ...data, workdays: data.workdays.filter((w) => !isPending(w)) },
@@ -89,11 +90,8 @@ function Shell({ user }) {
     }
     const who = ctx.asistente?.name ?? 'La asistente'
     for (const w of prev.values()) {
-      if (isAsistente) continue
-      const now = plannedNow.get(w.id)
-      if (now && w.status === 'prevista' && now.status === 'aceptada') notify(`${who} ha aceptado la jornada del ${when(w)}`)
-      const nowDone = !now && data.workdays.some((x) => x.id === w.id && !isPending(x))
-      if (nowDone) notify(`${who} ha completado la jornada del ${when(w)}`)
+      if (isAsistente || plannedNow.has(w.id)) continue
+      if (data.workdays.some((x) => x.id === w.id)) notify(`${who} ha aceptado la jornada del ${when(w)}`)
     }
   }, [planned, loading]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -132,8 +130,20 @@ function Shell({ user }) {
   // Contador: pedidas por aceptar + aceptadas cuyo día ya llegó (para marcar hechas)
   const hoy = today()
   const badges = {
-    jornadas: isAsistente ? planned.filter((w) => w.status === 'prevista' || w.date <= hoy).length : 0,
+    jornadas: isAsistente ? planned.length : 0,
   }
+  // Confirmación automática: una jornada aceptada cuyo día ya pasó se marca como hecha
+  const confirmed = useRef(new Set())
+  useEffect(() => {
+    if (loading || !isAsistente) return
+    for (const w of data.workdays) {
+      if (w.status === 'aceptada' && w.user_id === me.id && w.date < hoy && !confirmed.current.has(w.id)) {
+        confirmed.current.add(w.id)
+        db.update('workdays', w.id, { status: 'hecha' })
+      }
+    }
+  }, [data.workdays, loading, isAsistente]) // eslint-disable-line react-hooks/exhaustive-deps
+
   const tabs = TABS.filter((t) => !t.onlyAsistente || isAsistente)
   const current = tabs.find((t) => t.id === tab) ?? tabs[0]
   const View = current.view

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { today, monthOf, addMonths, monthName, weekday, shortDate, jornadas, money } from '../lib/dates.js'
-import { ProjectTag, WorkdayForm, PlannedRow } from '../components.jsx'
+import { ProjectTag, WorkdayForm, PlannedRow, ConfirmDay } from '../components.jsx'
 
 export default function Jornadas({ ctx }) {
   const { data, db, projectsById, isAsistente, asistente, planned } = ctx
@@ -46,7 +46,7 @@ export default function Jornadas({ ctx }) {
       {planned.length > 0 && (
         <section className="card">
           <div className="card-head">
-            <h3>Pedidas y aceptadas</h3>
+            <h3>Pendientes de aceptar</h3>
             <span className="count">{planned.length}</span>
           </div>
           <ul className="plan-list">
@@ -69,7 +69,7 @@ export default function Jornadas({ ctx }) {
               <tbody>
                 {rows.map((w) => (
                   <tr key={w.id}>
-                    <td className="nowrap capitalize">{weekday(w.date)} {shortDate(w.date)}</td>
+                    <td className="nowrap capitalize">{weekday(w.date)} {shortDate(w.date)}<ConfirmDay w={w} ctx={ctx} /></td>
                     <td>{w.amount == 1 ? 'Completa' : 'Media'}</td>
                     <td>
                       {isAsistente ? (

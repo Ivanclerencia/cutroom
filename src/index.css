@@ -303,6 +303,50 @@ label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color:
 .hero-stats div:last-child { border-right: 0; }
 .hero-stats span { font-size: 12px; color: var(--muted); }
 .hero-stats strong { font-size: 16px; font-weight: 500; }
+.hero-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 18px; max-width: 520px; }
+.tile {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-height: 112px;
+  padding: 12px 14px; border-radius: 18px; background: var(--surface-2); position: relative; overflow: hidden;
+}
+.tile-label { font-size: 11.5px; color: var(--muted); font-weight: 500; }
+/* Mini hoja de calendario */
+.tile-cal {
+  display: flex; flex-direction: column; align-items: center; width: 58px; margin-top: 2px;
+  border-radius: 12px; overflow: hidden; background: var(--surface); box-shadow: 0 0 0 1px var(--line), 0 4px 10px -6px rgba(0, 0, 0, 0.2);
+}
+.tc-wd { width: 100%; text-align: center; font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #fff; background: var(--warm-2); padding: 3px 0; }
+.tc-day { font-size: 26px; font-weight: 300; letter-spacing: -0.04em; line-height: 1.1; margin-top: 3px; }
+.tc-mon { font-size: 11px; color: var(--muted); margin-bottom: 5px; }
+/* Cuenta atrás */
+.tile-big { font-size: 40px; font-weight: 300; letter-spacing: -0.05em; line-height: 1; margin-top: 2px; font-variant-numeric: tabular-nums; }
+.tile-sub { font-size: 12.5px; color: var(--muted); margin-top: -2px; }
+.tile-bar { position: absolute; left: 14px; right: 14px; bottom: 12px; height: 4px; border-radius: 99px; background: var(--surface-3); overflow: hidden; }
+.tile-bar i { display: block; height: 100%; border-radius: inherit; background: var(--ok); }
+.tile-count.soon .tile-big { color: var(--warn); }
+.tile-count.soon .tile-bar i { background: linear-gradient(90deg, var(--warm), var(--warm-2)); }
+.tile-count.urgent { background: var(--danger-soft, rgba(226, 87, 76, 0.1)); }
+.tile-count.urgent .tile-big { color: var(--danger); }
+.tile-count.urgent .tile-bar i { background: var(--danger); }
+/* Estado */
+.tile-state {
+  display: inline-flex; align-items: center; gap: 7px; margin-top: auto; padding: 7px 12px; border-radius: 999px;
+  font-size: 14px; font-weight: 600; background: var(--surface); box-shadow: 0 0 0 1px var(--line);
+}
+.tile-state .dot { width: 9px; height: 9px; background: var(--faint); }
+.tile-status.tone-pendiente .tile-state .dot { background: var(--warn); box-shadow: 0 0 0 4px var(--warm-soft); }
+.tile-status.tone-enviada .tile-state .dot { background: var(--info); }
+.tile-status.tone-aprobada .tile-state .dot { background: var(--ok); }
+@media (max-width: 420px) {
+  .hero-tiles { gap: 8px; }
+  .tile { padding: 10px 11px; min-height: 104px; }
+  .tile-big { font-size: 34px; }
+  .tile-state {
+    flex-direction: column; align-items: flex-start; gap: 8px; padding: 0; margin-bottom: 4px;
+    background: none; box-shadow: none; font-size: 14px;
+  }
+  .tile-state .dot { width: 12px; height: 12px; }
+}
+
 .hero-foot {
   display: flex; align-items: center; justify-content: space-between; width: 100%;
   background: linear-gradient(90deg, rgba(255, 190, 120, 0.22), rgba(255, 190, 120, 0.06));
@@ -764,6 +808,13 @@ label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color:
 .work-chip.planned.accepted { border-style: solid; background: var(--warm-soft); }
 .plan-row.accepted { border-style: solid; border-color: var(--warm); }
 .plan-state { font-weight: 500; }
+.confirm-day { display: inline-flex; align-items: center; gap: 6px; margin-left: 6px; vertical-align: middle; }
+.confirm-tag {
+  font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px;
+  color: var(--warn); background: var(--warm-soft); white-space: nowrap;
+}
+.confirm-day .small { padding: 4px 11px; font-size: 12px; }
+.table td .confirm-day { display: flex; margin: 6px 0 0; text-transform: none; }
 .plan-state.ok { color: var(--ok); }
 .plan-state.wait { color: var(--warn); }
 .cal-day .work-chip + .work-chip, .wk-head .work-chip + .work-chip, .week-foot .work-chip + .work-chip { margin-left: 3px; }

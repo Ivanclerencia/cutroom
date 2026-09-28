@@ -41,6 +41,22 @@ export function WorkChip({ amount, planned, accepted }) {
   )
 }
 
+// Jornada aceptada que aún no se ha confirmado: etiqueta y botón "Hecha"
+export function ConfirmDay({ w, ctx }) {
+  if (w.status !== 'aceptada') return null
+  return (
+    <span className="confirm-day">
+      <span className="confirm-tag">Por confirmar</span>
+      {ctx.isAsistente && (
+        <button className="small" onClick={() => {
+          ctx.db.update('workdays', w.id, { status: 'hecha' })
+          ctx.notify('Jornada confirmada como hecha')
+        }}>Hecha</button>
+      )}
+    </span>
+  )
+}
+
 // Jornada pedida por el editor: la asistente la acepta y, al acabar el día, la marca como hecha
 export function PlannedRow({ w, ctx }) {
   const { db, isAsistente, projectsById, profilesById, asistente } = ctx
@@ -76,7 +92,7 @@ export function PlannedRow({ w, ctx }) {
       </div>
       <div className="plan-actions">
         {isAsistente && !accepted && (
-          <button className="small" onClick={() => setStatus('aceptada', 'Jornada aceptada')}>Aceptar</button>
+          <button className="small" onClick={() => setStatus('aceptada', 'Jornada aceptada: ya está en tus jornadas')}>Aceptar</button>
         )}
         {isAsistente && accepted && (
           <button className={due ? 'small' : 'small ghost'} onClick={() => setStatus('hecha', 'Jornada hecha: ya cuenta para cobrar')}>

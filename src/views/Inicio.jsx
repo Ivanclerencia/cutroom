@@ -80,11 +80,7 @@ export default function Inicio({ ctx, go }) {
                 <p className="eyebrow">Próxima entrega</p>
                 <h2 className="hero-title">{next.title}</h2>
                 <p className="muted">{projectsById[next.project_id]?.name}{projectsById[next.project_id]?.client ? ` · ${projectsById[next.project_id].client}` : ''}</p>
-                <div className="hero-stats">
-                  <div><span>Fecha</span><strong className="capitalize">{weekday(next.due_date)} {shortDate(next.due_date)}</strong></div>
-                  <div><span>Faltan</span><strong>{daysBetween(t, next.due_date) === 0 ? 'Es hoy' : `${daysBetween(t, next.due_date)} días`}</strong></div>
-                  <div><span>Estado</span><strong>{DELIVERY_STATUS[next.status]}</strong></div>
-                </div>
+                <NextTiles d={next} today={t} />
               </div>
               <button className="hero-foot" onClick={() => go('proyectos', next.project_id)}>
                 Abrir proyecto
@@ -134,7 +130,7 @@ export default function Inicio({ ctx, go }) {
       {ctx.planned.length > 0 && (
         <section className="card">
           <div className="card-head">
-            <h3>{isAsistente ? 'Tus jornadas pedidas' : `Jornadas pedidas a ${asistente?.name ?? 'asistente'}`}</h3>
+            <h3>{isAsistente ? 'Jornadas para aceptar' : `Pendientes de aceptar por ${asistente?.name ?? 'asistente'}`}</h3>
             <button className="link" onClick={() => go('jornadas')}>Ver todas</button>
           </div>
           <ul className="plan-list">
@@ -180,7 +176,6 @@ function WeekStrip({ ctx, go }) {
     .reduce((s, w) => s + Number(w.amount), 0)
   const weekTotal = days.reduce((s, d) => s + worked(d), 0)
   const planOf = (iso) => ctx.planned.filter((w) => w.date === iso).reduce((s, w) => s + Number(w.amount), 0)
-  const acceptedOn = (iso) => ctx.planned.some((w) => w.date === iso && w.status === 'aceptada')
   const range = `${shortDate(days[0])} – ${shortDate(days[6])}`
 
   return (
@@ -223,7 +218,7 @@ function WeekStrip({ ctx, go }) {
               </span>
               <span className="week-foot">
                 {w > 0 || planOf(iso) > 0
-                  ? <><WorkChip amount={w} /><WorkChip amount={planOf(iso)} planned accepted={acceptedOn(iso)} /></>
+                  ? <><WorkChip amount={w} /><WorkChip amount={planOf(iso)} planned /></>
                   : <span className="week-empty">—</span>}
               </span>
             </button>
@@ -273,5 +268,36 @@ function DeliveriesCard({ ctx, go }) {
         </ul>
       )}
     </section>
+  )
+}
+
+// Fecha, días que faltan y estado de la próxima entrega, en tres bloques visuales
+const MONTHS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sept', 'oct', 'nov', 'dic']
+function NextTiles({ d, today: t }) {
+  const date = parseISO(d.due_date)
+  const n = daysBetween(t, d.due_date)
+  const urgency = n <= 1 ? 'urgent' : n <= 3 ? 'soon' : 'calm'
+  const fill = Math.max(8, 100 - (Math.min(n, 14) / 14) * 100) // se llena al acercarse (ventana de 2 semanas)
+  return (
+    <div className="hero-tiles">
+      <div className="tile">
+        <span className="tile-label">Fecha</span>
+        <div className="tile-cal">
+          <span className="tc-wd">{weekday(d.due_date).replace('.', '')}</span>
+          <span className="tc-day">{date.getDate()}</span>
+          <span className="tc-mon">{MONTHS[date.getMonth()]}</span>
+        </div>
+      </div>
+      <div className={`tile tile-count ${urgency}`}>
+        <span className="tile-label">Faltan</span>
+        <strong className="tile-big">{n === 0 ? 'Hoy' : n}</strong>
+        <span className="tile-sub">{n === 0 ? 'es el día' : n === 1 ? 'día' : 'días'}</span>
+        <div className="tile-bar"><i style={{ width: `${fill}%` }} /></div>
+      </div>
+      <div className={`tile tile-status tone-${d.status}`}>
+        <span className="tile-label">Estado</span>
+        <span className="tile-state"><i className="dot" />{DELIVERY_STATUS[d.status]}</span>
+      </div>
+    </div>
   )
 }
