@@ -1,0 +1,14 @@
+{
+  "name": "PRESTI, IVÁN",
+  "short_name": "Presti·Iván",
+  "description": "Proyectos, entregas y jornadas compartidas",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#ececec",
+  "theme_color": "#ececec",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
