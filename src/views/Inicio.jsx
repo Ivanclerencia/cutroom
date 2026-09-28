@@ -2,7 +2,7 @@ import { useState } from 'react'
 import {
   today, monthOf, monthName, daysBetween, money, jornadas, weekday, shortDate, longDate, parseISO, toISO, addDays,
 } from '../lib/dates.js'
-import { ProjectTag, DueLabel, Badge, TaskRow, DELIVERY_STATUS, WorkdayForm, deliveryTip, tasksTip, dayTip } from '../components.jsx'
+import { ProjectTag, DueLabel, Badge, TaskRow, DELIVERY_STATUS, WorkdayForm, deliveryTip, tasksTip, dayTip, WorkChip } from '../components.jsx'
 import { Icon } from '../icons.jsx'
 
 const pad = (n) => String(n).padStart(2, '0')
@@ -225,7 +225,7 @@ function WeekStrip({ ctx, go }) {
                 {tasks > 0 && <span className="week-tasks" data-tip={tasksTip(dayTasks, projectsById)}>{tasks} tarea{tasks > 1 ? 's' : ''}</span>}
               </span>
               <span className="week-foot">
-                {w > 0 ? <span className="work-chip">{w === 0.5 ? '½' : w}</span> : <span className="week-empty">—</span>}
+                {w > 0 ? <WorkChip amount={w} /> : <span className="week-empty">—</span>}
               </span>
             </button>
           )

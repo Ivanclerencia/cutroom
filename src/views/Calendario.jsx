@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { today, monthOf, addMonths, parseISO, toISO, addDays, monthName, longDate, shortDate, weekday, jornadas } from '../lib/dates.js'
-import { ProjectTag, Badge, DELIVERY_STATUS, WorkdayForm, deliveryTip, tasksTip, dayTip } from '../components.jsx'
+import { ProjectTag, Badge, DELIVERY_STATUS, WorkdayForm, deliveryTip, tasksTip, dayTip, WorkChip } from '../components.jsx'
 
 const WEEKDAYS = ['L', 'M', 'X', 'J', 'V', 'S', 'D']
 
@@ -82,7 +82,7 @@ export default function Calendario({ ctx, go }) {
                   <span className="wk-head">
                     <span className="wk-wd">{weekday(iso).replace('.', '')}</span>
                     <span className="wk-num">{parseISO(iso).getDate()}</span>
-                    {work > 0 && <span className="work-chip">{work === 0.5 ? '½' : work}</span>}
+                    <WorkChip amount={work} />
                   </span>
                   <span className="wk-items">
                     {dels.map((d) => (
@@ -118,7 +118,7 @@ export default function Calendario({ ctx, go }) {
                 data-tip={dayTip(deliveries[iso] ?? [], tasks[iso] ?? [], projectsById)}>
                 <span className="cal-day">
                   <span className="cal-num">{parseISO(iso).getDate()}</span>
-                  {work > 0 && <span className="work-chip">{work === 0.5 ? '½' : work}</span>}
+                  <WorkChip amount={work} />
                 </span>
                 {(deliveries[iso] ?? []).map((d) => (
                   <span key={d.id} className={`cal-event ${d.status}`} style={{ '--c': projectsById[d.project_id]?.color }}
@@ -135,7 +135,7 @@ export default function Calendario({ ctx, go }) {
         </div>
         )}
         <p className="legend muted">
-          <span className="work-chip">1</span> jornada completa · <span className="work-chip">½</span> media jornada ·
+          <WorkChip amount={1} /> jornada completa · <WorkChip amount={0.5} /> media jornada ·
           las barras de color son entregas; en la vista semanal, las tareas van con borde discontinuo
         </p>
       </section>

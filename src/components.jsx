@@ -24,6 +24,20 @@ export function Avatar({ profile, size }) {
   )
 }
 
+// Marca de jornada: "1" sólida (completa) o "½" clara (media)
+export function WorkChip({ amount }) {
+  const n = Number(amount) || 0
+  if (n <= 0) return null
+  const whole = Math.floor(n)
+  const label = `${whole || ''}${n % 1 ? '½' : ''}`
+  const half = n < 1
+  return (
+    <span className={half ? 'work-chip half' : 'work-chip'} title={half ? 'Media jornada' : n === 1 ? 'Jornada completa' : `${String(n).replace('.', ',')} jornadas`}>
+      {label}
+    </span>
+  )
+}
+
 export function ProjectTag({ project, onClick }) {
   if (!project) return <span className="tag muted">Sin proyecto</span>
   return (
