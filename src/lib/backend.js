@@ -1,6 +1,5 @@
 // Capa de datos. Con VITE_SUPABASE_URL configurado usa Supabase;
 // si no, arranca en "modo demo" con datos de ejemplo guardados en el navegador.
-import { createClient } from '@supabase/supabase-js'
 import { createDemoBackend } from './demo.js'
 
 export const TABLES = ['profiles', 'projects', 'deliveries', 'tasks', 'workdays', 'settings', 'invoices']
@@ -11,40 +10,68 @@ const key = import.meta.env.VITE_SUPABASE_ANON_KEY
 export const isDemo = !url || !key
 
 function createSupabaseBackend() {
-  const sb = createClient(url, key)
+  // La librería de Supabase es lo más pesado de la app: se descarga aparte y en
+  // paralelo, así la interfaz se pinta al instante con los datos guardados.
+  let clientPromise
+  const client = () => (clientPromise ??= import('@supabase/supabase-js').then(({ createClient }) => createClient(url, key)))
 
   const check = ({ data, error }) => {
     if (error) throw new Error(error.message)
     return data
   }
 
+  // Sesión guardada por Supabase en este dispositivo (lectura inmediata, sin red)
+  const storageKey = `sb-${new URL(url).hostname.split('.')[0]}-auth-token`
+  const peekUser = () => {
+    try { return JSON.parse(localStorage.getItem(storageKey))?.user ?? null } catch { return null }
+  }
+
   return {
+    peekUser,
     async getUser() {
-      const { data } = await sb.auth.getSession()
+      const { data } = await (await client()).auth.getSession()
       return data.session?.user ?? null
     },
     onAuthChange(cb) {
-      const { data } = sb.auth.onAuthStateChange((_e, session) => cb(session?.user ?? null))
-      return () => data.subscription.unsubscribe()
+      let sub
+      let cancelled = false
+      client().then((sb) => {
+        if (cancelled) return
+        sub = sb.auth.onAuthStateChange((_e, session) => cb(session?.user ?? null)).data.subscription
+      })
+      return () => {
+        cancelled = true
+        sub?.unsubscribe()
+      }
     },
     async signIn(email, password) {
-      const { error } = await sb.auth.signInWithPassword({ email, password })
+      const { error } = await (await client()).auth.signInWithPassword({ email, password })
       if (error) throw new Error(error.message === 'Invalid login credentials' ? 'Email o contraseña incorrectos' : error.message)
     },
     async signOut() {
-      await sb.auth.signOut()
+      await (await client()).auth.signOut()
     },
-    fetchAll: async (table) => check(await sb.from(table).select('*')),
-    insert: async (table, row) => check(await sb.from(table).insert(row)),
-    update: async (table, id, patch) => check(await sb.from(table).update(patch).eq('id', id)),
-    remove: async (table, id) => check(await sb.from(table).delete().eq('id', id)),
-    upsert: async (table, row, onConflict) => check(await sb.from(table).upsert(row, { onConflict })),
+    fetchAll: async (table) => check(await (await client()).from(table).select('*')),
+    insert: async (table, row) => check(await (await client()).from(table).insert(row)),
+    update: async (table, id, patch) => check(await (await client()).from(table).update(patch).eq('id', id)),
+    remove: async (table, id) => check(await (await client()).from(table).delete().eq('id', id)),
+    upsert: async (table, row, onConflict) => check(await (await client()).from(table).upsert(row, { onConflict })),
     subscribe(onChange) {
-      const channel = sb
-        .channel('estudio')
-        .on('postgres_changes', { event: '*', schema: 'public' }, (p) => onChange(p.table))
-        .subscribe()
-      return () => sb.removeChannel(channel)
+      let sb
+      let channel
+      let cancelled = false
+      client().then((c) => {
+        if (cancelled) return
+        sb = c
+        channel = c
+          .channel('estudio')
+          .on('postgres_changes', { event: '*', schema: 'public' }, (p) => onChange(p.table))
+          .subscribe()
+      })
+      return () => {
+        cancelled = true
+        if (channel) sb.removeChannel(channel)
+      }
     },
   }
 }

@@ -22,17 +22,21 @@ const TABS = [
 ]
 
 export default function App() {
-  const [user, setUser] = useState(undefined)
+  // Si hay sesión guardada en el dispositivo se entra directamente, sin esperar a la red
+  const [user, setUser] = useState(() => backend.peekUser())
 
   useEffect(() => {
-    backend.getUser().then(setUser)
+    // Confirma la sesión en segundo plano. Solo se echa al usuario si la sesión
+    // ya no está guardada (sin conexión, Supabase no puede renovarla pero sigue siendo válida)
+    backend.getUser().then((u) => {
+      if (u || !backend.peekUser()) setUser(u)
+    })
     return backend.onAuthChange((u) => {
       if (!u) clearDataCache() // al salir no queda nada guardado en el dispositivo
       setUser(u)
     })
   }, [])
 
-  if (user === undefined) return <div className="splash">Cargando…</div>
   if (!user) return <Login appName={APP_NAME} />
   return <Shell user={user} />
 }

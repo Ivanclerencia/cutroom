@@ -88,7 +88,7 @@ export default function Cobros({ ctx }) {
         <h3>Por meses</h3>
         {months.length === 0 ? <p className="empty">Todavía no hay jornadas apuntadas.</p> : (
           <div className="table-wrap">
-            <table className="table">
+            <table className="table cobros-table">
               <thead>
                 <tr>
                   <th>Mes</th><th className="right">Jornadas</th><th className="right">Tarifa</th>
@@ -102,24 +102,24 @@ export default function Cobros({ ctx }) {
                       {monthName(m.month)}
                       {m.month === current && <span className="badge badge-soft">en curso</span>}
                     </td>
-                    <td className="right">{String(m.days).replace('.', ',')}</td>
-                    <td className="right muted">{money(m.rate)}</td>
-                    <td className="right"><strong>{money(m.amount)}</strong></td>
-                    <td>
+                    <td className="right" data-label="Jornadas">{String(m.days).replace('.', ',')}</td>
+                    <td className="right muted" data-label="Tarifa">{money(m.rate)}</td>
+                    <td className="right cobro-importe"><strong>{money(m.amount)}</strong></td>
+                    <td data-label="Estado">
                       <select className={`inline-select status-${m.status}`} value={m.status} onChange={(e) => setStatus(m, e.target.value)}>
                         {Object.entries(INVOICE_STATUS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                       </select>
                     </td>
-                    <td>
+                    <td data-label="Nº factura">
                       <input className="inline-text narrow" key={m.inv?.invoice_number ?? ''} defaultValue={m.inv?.invoice_number ?? ''}
                         placeholder="—"
                         onBlur={(e) => e.target.value.trim() !== (m.inv?.invoice_number ?? '') && save(m, { invoice_number: e.target.value.trim() || null })} />
                     </td>
-                    <td>
+                    <td data-label="Facturado">
                       <input type="date" className="inline-date" value={m.inv?.invoiced_on ?? ''}
                         onChange={(e) => save(m, { invoiced_on: e.target.value || null })} />
                     </td>
-                    <td>
+                    <td data-label="Pagado">
                       <input type="date" className="inline-date" value={m.inv?.paid_on ?? ''}
                         onChange={(e) => save(m, { paid_on: e.target.value || null })} />
                     </td>

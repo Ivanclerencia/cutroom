@@ -211,9 +211,12 @@ export function HoverTip() {
 
   useEffect(() => {
     // Se decide en cada movimiento (no al cargar): con dedo no se muestra
+    let current = null
     const over = (e) => {
       if (e.pointerType === 'touch') return
-      const el = e.target.closest?.('[data-tip]')
+      const el = e.target.closest?.('[data-tip]') ?? null
+      if (el === current) return // mismo elemento: no volver a pintar
+      current = el
       if (!el) return setTip(null)
       const r = el.getBoundingClientRect()
       try {
@@ -225,7 +228,10 @@ export function HoverTip() {
         })
       } catch { setTip(null) }
     }
-    const hide = () => setTip(null)
+    const hide = () => {
+      current = null
+      setTip(null)
+    }
     document.addEventListener('pointerover', over)
     document.documentElement.addEventListener('pointerleave', hide)
     window.addEventListener('scroll', hide, true)

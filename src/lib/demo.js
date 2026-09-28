@@ -93,6 +93,7 @@ export function createDemoBackend() {
 
   return {
     demoUsers: USERS,
+    peekUser: () => currentUser(),
     async getUser() { return currentUser() },
     onAuthChange(cb) { authListeners.add(cb); return () => authListeners.delete(cb) },
     async signIn(userId) {
