@@ -82,7 +82,7 @@ export function PlannedRow({ w, ctx }) {
     <li className={`plan-row ${accepted ? 'accepted' : 'requested'}${past ? ' past' : ''}`}>
       <WorkChip amount={w.amount} planned accepted={accepted} />
       <div className="plan-main">
-        <strong className="capitalize">{weekday(w.date).replace('.', '')} {shortDate(w.date)} · {w.amount == 1 ? 'Completa' : 'Media'}</strong>
+        <strong className="capitalize">{weekday(w.date).replace('.', '')} {shortDate(w.date)} · {w.amount == 1 ? 'Jornada' : 'Media jornada'}</strong>
         <span className="plan-meta">
           <ProjectTag project={projectsById[w.project_id]} />
           {w.note && <span>{w.note}</span>}

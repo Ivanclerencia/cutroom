@@ -178,7 +178,7 @@ export default function Calendario({ ctx, go }) {
           <ul className="list">
             {dayWork.map((w) => (
               <li key={w.id} className="list-row">
-                <strong>{w.amount == 1 ? 'Completa' : 'Media'}</strong>
+                <strong>{w.amount == 1 ? 'Jornada' : 'Media jornada'}</strong>
                 <ConfirmDay w={w} ctx={ctx} />
                 <ProjectTag project={projectsById[w.project_id]} />
                 {w.note && <span className="muted">{w.note}</span>}

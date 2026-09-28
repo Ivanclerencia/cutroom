@@ -130,7 +130,7 @@ export default function Inicio({ ctx, go }) {
               {cardDays.map((w) => (
                 <li key={w.id}>
                   <span className="capitalize">{weekday(w.date)} {shortDate(w.date)}</span>
-                  <span className="muted">{w.amount == 1 ? 'Completa' : 'Media'}</span>
+                  <span className="muted">{w.amount == 1 ? 'Jornada' : 'Media jornada'}</span>
                 </li>
               ))}
             </ul>

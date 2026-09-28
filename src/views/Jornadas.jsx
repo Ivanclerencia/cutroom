@@ -70,7 +70,7 @@ export default function Jornadas({ ctx }) {
                 {rows.map((w) => (
                   <tr key={w.id}>
                     <td className="nowrap capitalize">{weekday(w.date)} {shortDate(w.date)}<ConfirmDay w={w} ctx={ctx} /></td>
-                    <td>{w.amount == 1 ? 'Completa' : 'Media'}</td>
+                    <td>{w.amount == 1 ? 'Jornada' : 'Media jornada'}</td>
                     <td>
                       {isAsistente ? (
                         <select className="inline-select" value={w.project_id ?? ''}
