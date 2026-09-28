@@ -1,7 +1,7 @@
 {
-  "name": "Splice",
-  "short_name": "Splice",
-  "description": "Splice by Burning · proyectos, entregas y jornadas",
+  "name": "Cutroom",
+  "short_name": "Cutroom",
+  "description": "Cutroom by Burning · proyectos, entregas y jornadas",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

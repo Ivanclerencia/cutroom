@@ -1,4 +1,4 @@
-# Splice
+# Cutroom
 
 App compartida entre asistente y editor para llevar **proyectos, entregas, tareas, calendario, jornadas y cobros**.
 Los cambios de uno los ve el otro al instante.

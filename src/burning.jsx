@@ -10,13 +10,13 @@ export function BurningLogo({ size = 64 }) {
   )
 }
 
-// Logo + "Splice / by Burning". `children` se pinta debajo (p. ej. el botón de Face ID).
+// Logo + "Cutroom / by Burning". `children` se pinta debajo (p. ej. el botón de Face ID).
 export function BrandSplash({ leaving, children }) {
   return (
     <div className={leaving ? 'splash-screen leaving' : 'splash-screen'}>
       <div className="splash-brand">
         <BurningLogo size={72} />
-        <div className="splash-name">Splice</div>
+        <div className="splash-name">Cutroom</div>
         <div className="splash-by">by Burning</div>
       </div>
       {children && <div className="splash-actions">{children}</div>}

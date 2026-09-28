@@ -1,5 +1,5 @@
 /* =====================================================================
-   Splice · estilos
+   Cutroom · estilos
    Referencia: interfaz blanca mate, tipografía fina, números grandes,
    pastillas con punto de color y acentos cálidos (ámbar / naranja).
    Tema claro por defecto; [data-theme="dark"] en <html> activa el oscuro.
@@ -451,7 +451,7 @@ label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color:
 .side-item .nav-badge { margin-left: auto; }
 .bottom-item .nav-badge { position: absolute; top: -2px; right: -2px; box-shadow: 0 0 0 2px var(--bg); }
 
-/* ---------- Arranque Splice by Burning ---------- */
+/* ---------- Arranque Cutroom by Burning ---------- */
 .splash-screen {
   position: fixed; inset: 0; z-index: 400; display: flex; flex-direction: column; align-items: center; justify-content: center;
   background: #000; color: #fff; padding: env(safe-area-inset-top) 24px env(safe-area-inset-bottom);

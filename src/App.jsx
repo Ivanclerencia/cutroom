@@ -15,7 +15,7 @@ import { BrandSplash, useBootSplash } from './burning.jsx'
 import { lockEnabled } from './lib/lock.js'
 import { weekday, shortDate, today } from './lib/dates.js'
 
-const APP_NAME = 'Splice'
+const APP_NAME = 'Cutroom'
 
 const TABS = [
   { id: 'inicio', label: 'Inicio', icon: 'home', view: Inicio },

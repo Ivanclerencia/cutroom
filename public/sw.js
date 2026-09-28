@@ -1,4 +1,4 @@
-// Service worker de Splice: guarda la app en el dispositivo para abrirla al instante.
+// Service worker de Cutroom: guarda la app en el dispositivo para abrirla al instante.
 // - Página: primero la red (para recibir versiones nuevas); si tarda o no hay conexión, la copia guardada.
 // - Archivos con huella (assets/*): se guardan para siempre, nunca cambian.
 // - Resto (iconos, manifiesto): copia guardada y se actualiza en segundo plano.

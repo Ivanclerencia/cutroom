@@ -46,7 +46,7 @@ export async function enableLock(user, displayName) {
   const cred = await navigator.credentials.create({
     publicKey: {
       challenge: challenge(),
-      rp: { name: 'Splice', id: location.hostname },
+      rp: { name: 'Cutroom', id: location.hostname },
       user: {
         id: new TextEncoder().encode(user.id),
         name: user.email ?? displayName,
