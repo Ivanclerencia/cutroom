@@ -5,6 +5,17 @@
 
 const KEY = (uid) => `splice-faceid-${uid}`
 
+// La app se abre directamente: se desactiva (una sola vez) el bloqueo que
+// estuviera activado en este dispositivo. Se puede volver a activar en Ajustes.
+try {
+  if (!localStorage.getItem('splice-lock-reset-1')) {
+    Object.keys(localStorage)
+      .filter((k) => k.startsWith('splice-faceid-') && !k.startsWith('splice-faceid-offer-'))
+      .forEach((k) => localStorage.removeItem(k))
+    localStorage.setItem('splice-lock-reset-1', '1')
+  }
+} catch { /* sin almacenamiento */ }
+
 // Nombre del sistema biométrico según el dispositivo
 export const bioName = (() => {
   const ua = navigator.userAgent

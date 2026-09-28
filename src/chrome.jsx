@@ -83,7 +83,7 @@ export function SettingsSheet({ me, user, role, onClose, notify }) {
         <div className="sheet-row">
           <span>
             <strong>Entrar con {bioName}</strong>
-            <small>{available ? 'Se pedirá al abrir la app' : 'No disponible en este dispositivo o navegador'}</small>
+            <small>{available ? 'Opcional. En iPhone, iOS pide antes tocar “Usar llave de acceso”' : 'No disponible en este dispositivo o navegador'}</small>
           </span>
           <button className={enabled ? 'switch on' : 'switch'} disabled={!available || busy} onClick={toggleLock}
             role="switch" aria-checked={enabled} aria-label={`Entrar con ${bioName}`}><i /></button>
@@ -98,42 +98,6 @@ export function SettingsSheet({ me, user, role, onClose, notify }) {
           <Icon name="logout" size={18} />
           Cerrar sesión
         </button>
-      </div>
-    </div>
-  )
-}
-
-// ---- Sugerencia para activar Face ID (una sola vez) -------------------------
-export function FaceIdPrompt({ me, user, notify }) {
-  const key = `splice-faceid-offer-${user.id}`
-  const [show, setShow] = useState(false)
-  useEffect(() => {
-    let dismissed = false
-    try { dismissed = !!localStorage.getItem(key) } catch { /* sin almacenamiento */ }
-    if (dismissed || lockEnabled(user.id)) return
-    lockAvailable().then(setShow)
-  }, [key, user.id])
-  if (!show) return null
-  const close = () => {
-    try { localStorage.setItem(key, '1') } catch { /* sin almacenamiento */ }
-    setShow(false)
-  }
-  const activate = async () => {
-    try {
-      await enableLock(user, me.name)
-      notify(`${bioName} activado`)
-      close()
-    } catch {
-      notify(`No se ha activado ${bioName}`)
-    }
-  }
-  return (
-    <div className="install-hint faceid-offer" role="note">
-      <strong>¿Entrar con {bioName}?</strong>
-      <span>Al abrir la app te pedirá {bioName} para entrar. Puedes cambiarlo cuando quieras tocando tu avatar.</span>
-      <div className="row">
-        <button className="small" onClick={activate}>Activar</button>
-        <button className="small ghost" onClick={close}>Ahora no</button>
       </div>
     </div>
   )

@@ -10,7 +10,7 @@ import Cobros from './views/Cobros.jsx'
 import { ThemeToggle } from './theme.jsx'
 import { Brand, Avatar, HoverTip, InstallHint } from './components.jsx'
 import { Icon } from './icons.jsx'
-import { useToast, LivePill, SettingsSheet, FaceIdPrompt, useLock, LockScreen } from './chrome.jsx'
+import { useToast, LivePill, SettingsSheet, useLock, LockScreen } from './chrome.jsx'
 import { BrandSplash, useBootSplash } from './burning.jsx'
 import { lockEnabled } from './lib/lock.js'
 import { weekday, shortDate, today } from './lib/dates.js'
@@ -183,7 +183,6 @@ function Shell({ user }) {
         )}
 
         <main className="main">
-          <FaceIdPrompt me={me} user={user} notify={notify} />
           {loading ? <div className="splash">Cargando…</div> : (
             <View key={current.id} ctx={ctx} go={go} focusProject={focusProject} setFocusProject={setFocusProject} />
           )}
