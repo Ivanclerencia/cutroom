@@ -11,7 +11,7 @@ import { ThemeToggle } from './theme.jsx'
 import { Brand, Avatar, HoverTip, InstallHint } from './components.jsx'
 import { Icon } from './icons.jsx'
 
-const APP_NAME = 'PRESTI, IVÁN'
+const APP_NAME = 'Splice'
 
 const TABS = [
   { id: 'inicio', label: 'Inicio', icon: 'home', view: Inicio },

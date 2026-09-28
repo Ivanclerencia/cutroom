@@ -9,7 +9,7 @@ export const COLORS = ['#4f6bed', '#e0533d', '#2f9e6e', '#8a5cf6', '#d4912a', '#
 export function Brand({ name }) {
   return (
     <div className="brand">
-      <span className="brand-mark">PI</span>
+      <img className="brand-mark" src={`${import.meta.env.BASE_URL}brand.png`} alt="" width="30" height="30" />
       <span className="brand-name">{name}</span>
     </div>
   )
