@@ -76,7 +76,8 @@ export function createDemoBackend() {
   const canWrite = (table) => {
     const u = currentUser()
     if (!u) return false
-    if (['settings', 'invoices', 'workdays'].includes(table)) return u.role === 'asistente'
+    if (['settings', 'invoices'].includes(table)) return u.role === 'asistente'
+    if (table === 'workdays') return true // el editor solo puede pedir (previstas); lo limita la interfaz
     return table !== 'profiles'
   }
   const mutate = (table, fn) => {

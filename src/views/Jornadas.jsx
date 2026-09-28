@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { today, monthOf, addMonths, monthName, weekday, shortDate, jornadas, money } from '../lib/dates.js'
-import { ProjectTag, WorkdayForm } from '../components.jsx'
+import { ProjectTag, WorkdayForm, PlannedRow } from '../components.jsx'
 
 export default function Jornadas({ ctx }) {
-  const { data, db, projectsById, isAsistente, asistente } = ctx
+  const { data, db, projectsById, isAsistente, asistente, planned } = ctx
   const [month, setMonth] = useState(monthOf(today()))
 
   const rows = data.workdays
@@ -30,10 +30,28 @@ export default function Jornadas({ ctx }) {
         </div>
       </div>
 
-      {isAsistente && (
+      {isAsistente ? (
         <section className="card">
           <h3>Apuntar jornada</h3>
           <WorkdayForm ctx={ctx} />
+        </section>
+      ) : asistente && (
+        <section className="card">
+          <h3>Pedir jornada a {asistente.name}</h3>
+          <p className="muted small">Quedará como prevista hasta que {asistente.name} la marque como hecha.</p>
+          <WorkdayForm ctx={ctx} plan />
+        </section>
+      )}
+
+      {planned.length > 0 && (
+        <section className="card">
+          <div className="card-head">
+            <h3>Previstas</h3>
+            <span className="count">{planned.length}</span>
+          </div>
+          <ul className="plan-list">
+            {planned.map((w) => <PlannedRow key={w.id} w={w} ctx={ctx} />)}
+          </ul>
         </section>
       )}
 

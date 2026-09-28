@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { today, shortDate, relative, daysBetween } from './lib/dates.js'
+import { today, shortDate, relative, daysBetween, weekday } from './lib/dates.js'
 
 export const PROJECT_STATUS = { activo: 'Activo', en_pausa: 'En pausa', entregado: 'Entregado', archivado: 'Archivado' }
 export const DELIVERY_STATUS = { pendiente: 'Pendiente', enviada: 'Enviada', aprobada: 'Aprobada' }
@@ -25,16 +25,52 @@ export function Avatar({ profile, size }) {
 }
 
 // Marca de jornada: "1" sólida (completa) o "½" clara (media)
-export function WorkChip({ amount }) {
+export function WorkChip({ amount, planned }) {
   const n = Number(amount) || 0
   if (n <= 0) return null
   const whole = Math.floor(n)
   const label = `${whole || ''}${n % 1 ? '½' : ''}`
   const half = n < 1
+  const kind = half ? 'Media jornada' : n === 1 ? 'Jornada completa' : `${String(n).replace('.', ',')} jornadas`
   return (
-    <span className={half ? 'work-chip half' : 'work-chip'} title={half ? 'Media jornada' : n === 1 ? 'Jornada completa' : `${String(n).replace('.', ',')} jornadas`}>
+    <span className={`work-chip${half ? ' half' : ''}${planned ? ' planned' : ''}`} title={planned ? `${kind} prevista` : kind}>
       {label}
     </span>
+  )
+}
+
+// Jornada prevista (pedida por el editor): la asistente la confirma cuando la hace
+export function PlannedRow({ w, ctx }) {
+  const { db, isAsistente, projectsById, profilesById, asistente } = ctx
+  const by = profilesById[w.created_by]
+  const past = w.date < today()
+  const confirmDone = () => {
+    db.update('workdays', w.id, { status: 'hecha' })
+    ctx.notify('Jornada marcada como hecha')
+  }
+  const remove = () => {
+    if (confirm(isAsistente ? '¿Quitar esta jornada prevista?' : `¿Anular la jornada pedida a ${asistente?.name ?? 'asistente'}?`)) {
+      db.remove('workdays', w.id)
+      ctx.notify('Jornada prevista quitada')
+    }
+  }
+  return (
+    <li className={past ? 'plan-row past' : 'plan-row'}>
+      <WorkChip amount={w.amount} planned />
+      <div className="plan-main">
+        <strong className="capitalize">{weekday(w.date).replace('.', '')} {shortDate(w.date)} · {w.amount == 1 ? 'Completa' : 'Media'}</strong>
+        <span className="plan-meta">
+          <ProjectTag project={projectsById[w.project_id]} />
+          {w.note && <span>{w.note}</span>}
+          {by && by.id !== asistente?.id && <span>pedida por {by.name}</span>}
+          {past && <span className="plan-past">{isAsistente ? '¿La hiciste?' : 'Sin confirmar'}</span>}
+        </span>
+      </div>
+      <div className="plan-actions">
+        {isAsistente && <button className="small" onClick={confirmDone}>Hecha</button>}
+        <button className="icon-btn" title="Quitar" onClick={remove}>×</button>
+      </div>
+    </li>
   )
 }
 
@@ -59,6 +95,58 @@ export function DueLabel({ date, done }) {
   return <span className={cls} title={shortDate(date)}>{shortDate(date)} · {relative(date)}</span>
 }
 
+// ---- Pastillas táctiles: al tocarlas se abre el selector nativo ----------------
+const Chevron = () => (
+  <svg className="pill-chev" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+)
+
+// Estado con punto de color (entregas, proyectos)
+export function PillSelect({ value, options, onChange, label }) {
+  return (
+    <label className={`pill-select tone-${value}`}>
+      <i className="dot" />
+      <span>{options[value]}</span>
+      <Chevron />
+      <select value={value} onChange={(e) => onChange(e.target.value)} aria-label={label}>
+        {Object.entries(options).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+      </select>
+    </label>
+  )
+}
+
+// Fecha: muestra "jue 1 oct" y abre el calendario del sistema
+export function DatePill({ value, onChange, placeholder, done, required }) {
+  let tone = ''
+  if (value && !done) {
+    const n = daysBetween(today(), value)
+    tone = n < 0 ? ' late' : n <= 3 ? ' soon' : ''
+  }
+  return (
+    <label className={`pill-select date-pill${value ? '' : ' empty'}${tone}`}>
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5" /><path d="M3.5 10h17M8 3v4M16 3v4" /></svg>
+      <span>{value ? `${shortDate(value)} · ${relative(value)}` : placeholder}</span>
+      <input type="date" value={value ?? ''} required={required}
+        onChange={(e) => onChange(e.target.value || null)} aria-label={placeholder} />
+    </label>
+  )
+}
+
+// Persona asignada con su avatar
+export function AssigneePill({ value, profiles, onChange }) {
+  const p = profiles.find((x) => x.id === value)
+  return (
+    <label className="pill-select person-pill">
+      {p ? <Avatar profile={p} size="sm" /> : <span className="avatar-empty" />}
+      <span>{p?.name ?? 'Sin asignar'}</span>
+      <Chevron />
+      <select value={value ?? ''} onChange={(e) => onChange(e.target.value || null)} aria-label="Asignada a">
+        <option value="">Sin asignar</option>
+        {profiles.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
+      </select>
+    </label>
+  )
+}
+
 export function TaskRow({ task, ctx, showProject, onProject }) {
   const { db, projectsById } = ctx
   return (
@@ -69,18 +157,16 @@ export function TaskRow({ task, ctx, showProject, onProject }) {
         onChange={() => db.update('tasks', task.id, { done: !task.done })}
         aria-label="Hecha"
       />
-      <span className="task-title">{task.title}</span>
-      {showProject && <ProjectTag project={projectsById[task.project_id]} onClick={onProject && (() => onProject(task.project_id))} />}
-      <select
-        className="inline-select"
-        value={task.assignee ?? ''}
-        onChange={(e) => db.update('tasks', task.id, { assignee: e.target.value || null })}
-        aria-label="Asignada a"
-      >
-        <option value="">Sin asignar</option>
-        {ctx.data.profiles.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-      </select>
-      <DueLabel date={task.due_date} done={task.done} />
+      <div className="task-main">
+        <span className="task-title">{task.title}</span>
+        <div className="task-meta">
+          {showProject && <ProjectTag project={projectsById[task.project_id]} onClick={onProject && (() => onProject(task.project_id))} />}
+          <AssigneePill value={task.assignee} profiles={ctx.data.profiles}
+            onChange={(v) => db.update('tasks', task.id, { assignee: v })} />
+          <DatePill value={task.due_date} done={task.done} placeholder="Sin fecha"
+            onChange={(v) => db.update('tasks', task.id, { due_date: v })} />
+        </div>
+      </div>
       <button
         className="icon-btn"
         title="Borrar tarea"
@@ -95,11 +181,11 @@ export function TaskRow({ task, ctx, showProject, onProject }) {
 export function NewTaskForm({ ctx, projectId }) {
   const [title, setTitle] = useState('')
   const [assignee, setAssignee] = useState(ctx.me.id)
-  const [due, setDue] = useState('')
+  const [due, setDue] = useState(null)
   const [pid, setPid] = useState(projectId ?? '')
   const activeProjects = ctx.data.projects.filter((p) => p.status === 'activo')
 
-  const submit = async (e) => {
+  const submit = (e) => {
     e.preventDefault()
     if (!title.trim() || !(projectId ?? pid)) return
     ctx.db.insert('tasks', {
@@ -109,31 +195,36 @@ export function NewTaskForm({ ctx, projectId }) {
       due_date: due || null,
     })
     setTitle('')
-    setDue('')
+    setDue(null)
     ctx.notify('Tarea añadida')
   }
 
   return (
-    <form className="row-form" onSubmit={submit}>
-      <input placeholder="Nueva tarea…" value={title} onChange={(e) => setTitle(e.target.value)} />
-      {!projectId && (
-        <select value={pid} onChange={(e) => setPid(e.target.value)} required>
-          <option value="">Proyecto…</option>
-          {activeProjects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-        </select>
-      )}
-      <select value={assignee ?? ''} onChange={(e) => setAssignee(e.target.value)}>
-        <option value="">Sin asignar</option>
-        {ctx.data.profiles.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-      </select>
-      <input type="date" value={due} onChange={(e) => setDue(e.target.value)} aria-label="Fecha límite" />
-      <button type="submit" disabled={!title.trim()}>Añadir</button>
+    <form className="composer" onSubmit={submit}>
+      <div className="composer-main">
+        <input placeholder="Nueva tarea…" value={title} onChange={(e) => setTitle(e.target.value)} enterKeyHint="done" />
+        <button type="submit" className="composer-add" disabled={!title.trim()}>Añadir</button>
+      </div>
+      <div className="composer-opts">
+        {!projectId && (
+          <label className="pill-select">
+            <span>{activeProjects.find((p) => p.id === pid)?.name ?? 'Proyecto…'}</span>
+            <Chevron />
+            <select value={pid} onChange={(e) => setPid(e.target.value)} required aria-label="Proyecto">
+              <option value="">Proyecto…</option>
+              {activeProjects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+            </select>
+          </label>
+        )}
+        <AssigneePill value={assignee} profiles={ctx.data.profiles} onChange={setAssignee} />
+        <DatePill value={due} onChange={setDue} placeholder="Fecha límite" />
+      </div>
     </form>
   )
 }
 
 // Formulario para apuntar una jornada (completa o media)
-export function WorkdayForm({ ctx, date: initialDate, onDone }) {
+export function WorkdayForm({ ctx, date: initialDate, onDone, plan }) {
   const { data, db } = ctx
   const [date, setDate] = useState(initialDate ?? today())
   const [amount, setAmount] = useState(1)
@@ -148,9 +239,13 @@ export function WorkdayForm({ ctx, date: initialDate, onDone }) {
 
   const submit = async (e) => {
     e.preventDefault()
-    db.insert('workdays', { date, amount, project_id: projectId || null, note: note.trim() || null })
+    const row = { date, amount, project_id: projectId || null, note: note.trim() || null }
+    // "Pedir" (editor): queda prevista a nombre de la asistente hasta que la confirme
+    db.insert('workdays', plan ? { ...row, status: 'prevista', user_id: ctx.asistente?.id, created_by: ctx.me.id } : row)
     setNote('')
-    ctx.notify(amount === 1 ? 'Jornada completa apuntada' : 'Media jornada apuntada')
+    ctx.notify(plan
+      ? `Jornada pedida a ${ctx.asistente?.name ?? 'asistente'}`
+      : amount === 1 ? 'Jornada completa apuntada' : 'Media jornada apuntada')
     onDone?.()
   }
 
@@ -178,8 +273,8 @@ export function WorkdayForm({ ctx, date: initialDate, onDone }) {
         Nota
         <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Opcional" />
       </label>
-      <button type="submit">Apuntar jornada</button>
-      {overflow && (
+      <button type="submit">{plan ? `Pedir a ${ctx.asistente?.name ?? 'asistente'}` : 'Apuntar jornada'}</button>
+      {!plan && overflow && (
         <p className="warn">Ojo: ese día ya tienes {already === 1 ? 'una jornada completa' : 'media jornada'} apuntada.</p>
       )}
     </form>

@@ -73,7 +73,7 @@ create table if not exists public.tasks (
   created_at timestamptz not null default now()
 );
 
--- ---------- Jornadas (las ve el editor, solo las edita la asistente) --
+-- ---------- Jornadas (las ve el editor; él solo puede pedir previstas) --
 create table if not exists public.workdays (
   id         uuid primary key default gen_random_uuid(),
   user_id    uuid not null default auth.uid() references public.profiles on delete cascade,
@@ -128,10 +128,34 @@ create policy "tareas todo" on public.tasks for all to authenticated using (true
 -- Jornadas: los dos las ven, solo la asistente crea/edita/borra las suyas
 drop policy if exists "jornadas lectura" on public.workdays;
 create policy "jornadas lectura" on public.workdays for select to authenticated using (true);
+-- Jornadas: ver migracion-01 (previstas)
+-- 'hecha' = trabajada (cuenta para cobros) · 'prevista' = pedida/planificada
+alter table public.workdays
+  add column if not exists status text not null default 'hecha' check (status in ('prevista', 'hecha'));
+alter table public.workdays
+  add column if not exists created_by uuid default auth.uid() references public.profiles on delete set null;
+
+-- Asistente: todo sobre sus jornadas
 drop policy if exists "jornadas escritura" on public.workdays;
-create policy "jornadas escritura" on public.workdays for all to authenticated
+drop policy if exists "jornadas asistente" on public.workdays;
+create policy "jornadas asistente" on public.workdays for all to authenticated
   using (public.is_asistente() and user_id = auth.uid())
   with check (public.is_asistente() and user_id = auth.uid());
+
+-- Editor: solo puede pedir (crear), cambiar o borrar jornadas PREVISTAS de la asistente
+drop policy if exists "jornadas editor crea previstas" on public.workdays;
+create policy "jornadas editor crea previstas" on public.workdays for insert to authenticated
+  with check (
+    not public.is_asistente() and status = 'prevista'
+    and user_id in (select id from public.profiles where role = 'asistente')
+  );
+drop policy if exists "jornadas editor cambia previstas" on public.workdays;
+create policy "jornadas editor cambia previstas" on public.workdays for update to authenticated
+  using (not public.is_asistente() and status = 'prevista')
+  with check (not public.is_asistente() and status = 'prevista');
+drop policy if exists "jornadas editor borra previstas" on public.workdays;
+create policy "jornadas editor borra previstas" on public.workdays for delete to authenticated
+  using (not public.is_asistente() and status = 'prevista');
 
 -- Tarifa y cobros: invisibles para el editor
 drop policy if exists "tarifa asistente" on public.settings;

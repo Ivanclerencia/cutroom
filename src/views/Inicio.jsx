@@ -2,7 +2,7 @@ import { useState } from 'react'
 import {
   today, monthOf, monthName, daysBetween, money, jornadas, weekday, shortDate, longDate, parseISO, toISO, addDays,
 } from '../lib/dates.js'
-import { ProjectTag, DueLabel, Badge, TaskRow, DELIVERY_STATUS, WorkdayForm, deliveryTip, tasksTip, dayTip, WorkChip } from '../components.jsx'
+import { ProjectTag, DueLabel, Badge, TaskRow, DELIVERY_STATUS, WorkdayForm, deliveryTip, tasksTip, dayTip, WorkChip, PlannedRow } from '../components.jsx'
 import { Icon } from '../icons.jsx'
 
 const pad = (n) => String(n).padStart(2, '0')
@@ -132,6 +132,18 @@ export default function Inicio({ ctx, go }) {
         </section>
       </div>
 
+      {ctx.planned.length > 0 && (
+        <section className="card">
+          <div className="card-head">
+            <h3>{isAsistente ? 'Jornadas que te han pedido' : `Jornadas pedidas a ${asistente?.name ?? 'asistente'}`}</h3>
+            <button className="link" onClick={() => go('jornadas')}>Ver todas</button>
+          </div>
+          <ul className="plan-list">
+            {ctx.planned.slice(0, 4).map((w) => <PlannedRow key={w.id} w={w} ctx={ctx} />)}
+          </ul>
+        </section>
+      )}
+
       <WeekStrip ctx={ctx} go={go} />
 
       <div className="grid-2">
@@ -187,6 +199,7 @@ function WeekStrip({ ctx, go }) {
     .filter((w) => w.date === iso && w.user_id === asistente?.id)
     .reduce((s, w) => s + Number(w.amount), 0)
   const weekTotal = days.reduce((s, d) => s + worked(d), 0)
+  const planOf = (iso) => ctx.planned.filter((w) => w.date === iso).reduce((s, w) => s + Number(w.amount), 0)
   const range = `${shortDate(days[0])} – ${shortDate(days[6])}`
 
   return (
@@ -228,7 +241,9 @@ function WeekStrip({ ctx, go }) {
                 {tasks > 0 && <span className="week-tasks" data-tip={tasksTip(dayTasks, projectsById)}>{tasks} tarea{tasks > 1 ? 's' : ''}</span>}
               </span>
               <span className="week-foot">
-                {w > 0 ? <WorkChip amount={w} /> : <span className="week-empty">—</span>}
+                {w > 0 || planOf(iso) > 0
+                  ? <><WorkChip amount={w} /><WorkChip amount={planOf(iso)} planned /></>
+                  : <span className="week-empty">—</span>}
               </span>
             </button>
           )

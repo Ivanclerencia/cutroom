@@ -55,8 +55,11 @@ function Shell({ user }) {
   const me = data.profiles.find((p) => p.id === user.id) ?? { id: user.id, name: user.email, role: 'editor' }
   const isAsistente = me.role === 'asistente'
 
+  // Jornadas previstas (pedidas) aparte: todas las sumas y cobros usan solo las hechas
+  const planned = data.workdays.filter((w) => w.status === 'prevista').sort((a, b) => a.date.localeCompare(b.date))
   const ctx = {
-    data, db, me, isAsistente, notify,
+    data: { ...data, workdays: data.workdays.filter((w) => w.status !== 'prevista') },
+    planned, db, me, isAsistente, notify,
     projectsById: Object.fromEntries(data.projects.map((p) => [p.id, p])),
     profilesById: Object.fromEntries(data.profiles.map((p) => [p.id, p])),
     asistente: data.profiles.find((p) => p.role === 'asistente'),

@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { today, monthOf, addMonths, parseISO, toISO, addDays, monthName, longDate, shortDate, weekday, jornadas } from '../lib/dates.js'
-import { ProjectTag, Badge, DELIVERY_STATUS, WorkdayForm, deliveryTip, tasksTip, dayTip, WorkChip } from '../components.jsx'
+import { ProjectTag, Badge, DELIVERY_STATUS, WorkdayForm, deliveryTip, tasksTip, dayTip, WorkChip, PlannedRow } from '../components.jsx'
 
 const WEEKDAYS = ['L', 'M', 'X', 'J', 'V', 'S', 'D']
 
 export default function Calendario({ ctx, go }) {
-  const { data, db, projectsById, isAsistente, asistente } = ctx
+  const { data, db, projectsById, isAsistente, asistente, planned } = ctx
   const [month, setMonth] = useState(monthOf(today()))
   const [selected, setSelected] = useState(today())
   const [view, setView] = useState(() => {
@@ -47,9 +47,12 @@ export default function Calendario({ ctx, go }) {
     .filter((w) => w.user_id === asistente?.id && monthOf(w.date) === month)
     .reduce((s, w) => s + Number(w.amount), 0)
   const workOf = (iso) => (workdays[iso] ?? []).reduce((s, w) => s + Number(w.amount), 0)
+  const plannedBy = byDate(planned, 'date')
+  const planOf = (iso) => (plannedBy[iso] ?? []).reduce((s, w) => s + Number(w.amount), 0)
   const weekTotal = weekDays.reduce((s, d) => s + workOf(d), 0)
 
   const dayWork = workdays[selected] ?? []
+  const dayPlanned = plannedBy[selected] ?? []
   const dayDeliveries = deliveries[selected] ?? []
   const dayTasks = tasks[selected] ?? []
 
@@ -82,7 +85,7 @@ export default function Calendario({ ctx, go }) {
                   <span className="wk-head">
                     <span className="wk-wd">{weekday(iso).replace('.', '')}</span>
                     <span className="wk-num">{parseISO(iso).getDate()}</span>
-                    <WorkChip amount={work} />
+                    <WorkChip amount={work} /><WorkChip amount={planOf(iso)} planned />
                   </span>
                   <span className="wk-items">
                     {dels.map((d) => (
@@ -118,7 +121,7 @@ export default function Calendario({ ctx, go }) {
                 data-tip={dayTip(deliveries[iso] ?? [], tasks[iso] ?? [], projectsById)}>
                 <span className="cal-day">
                   <span className="cal-num">{parseISO(iso).getDate()}</span>
-                  <WorkChip amount={work} />
+                  <WorkChip amount={work} /><WorkChip amount={planOf(iso)} planned />
                 </span>
                 {(deliveries[iso] ?? []).map((d) => (
                   <span key={d.id} className={`cal-event ${d.status}`} style={{ '--c': projectsById[d.project_id]?.color }}
@@ -135,7 +138,7 @@ export default function Calendario({ ctx, go }) {
         </div>
         )}
         <p className="legend muted">
-          <WorkChip amount={1} /> jornada completa · <WorkChip amount={0.5} /> media jornada ·
+          <WorkChip amount={1} /> jornada completa · <WorkChip amount={0.5} /> media · <WorkChip amount={1} planned /> prevista ·
           las barras de color son entregas; en la vista semanal, las tareas van con borde discontinuo
         </p>
       </section>
@@ -186,7 +189,22 @@ export default function Calendario({ ctx, go }) {
             ))}
           </ul>
         )}
-        {isAsistente && <WorkdayForm key={selected} ctx={ctx} date={selected} />}
+        {dayPlanned.length > 0 && (
+          <>
+            <h4>Previstas</h4>
+            <ul className="plan-list">
+              {dayPlanned.map((w) => <PlannedRow key={w.id} w={w} ctx={ctx} />)}
+            </ul>
+          </>
+        )}
+        {isAsistente
+          ? <WorkdayForm key={selected} ctx={ctx} date={selected} />
+          : asistente && (
+            <div className="plan-form">
+              <h4>Pedir jornada a {asistente.name}</h4>
+              <WorkdayForm key={selected} ctx={ctx} date={selected} plan />
+            </div>
+          )}
       </aside>
     </div>
   )
