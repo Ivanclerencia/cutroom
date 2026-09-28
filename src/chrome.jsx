@@ -137,6 +137,7 @@ export function LockScreen({ user, onUnlock }) {
 
   // Pide Face ID nada más abrir; si el sistema exige un toque, queda el botón
   useEffect(() => {
+    document.getElementById('boot')?.remove()
     if (tried.current) return
     tried.current = true
     attempt()

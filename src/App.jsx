@@ -11,8 +11,7 @@ import { ThemeToggle } from './theme.jsx'
 import { Brand, Avatar, HoverTip, InstallHint } from './components.jsx'
 import { Icon } from './icons.jsx'
 import { useToast, LivePill, SettingsSheet, useLock, LockScreen } from './chrome.jsx'
-import { BrandSplash, useBootSplash } from './burning.jsx'
-import { lockEnabled } from './lib/lock.js'
+import { useBootSplash } from './burning.jsx'
 import { weekday, shortDate, today } from './lib/dates.js'
 
 const APP_NAME = 'Cutroom'
@@ -41,13 +40,10 @@ export default function App() {
     })
   }, [])
 
-  const boot = useBootSplash()
-  // Con Face ID activado, la propia pantalla de bloqueo hace de arranque
-  const locked = user && lockEnabled(user.id)
+  useBootSplash()
   return (
     <>
       {user ? <Shell user={user} /> : <Login appName={APP_NAME} />}
-      {boot !== 'gone' && !locked && <BrandSplash leaving={boot === 'leaving'} />}
     </>
   )
 }
