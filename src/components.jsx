@@ -237,3 +237,28 @@ export function HoverTip() {
     </div>
   )
 }
+
+// Aviso de instalación: solo en iPhone/iPad abierto desde el navegador (no instalada)
+export function InstallHint() {
+  const [hidden, setHidden] = useState(() => {
+    try { return localStorage.getItem('estudio-install-hint') === 'off' } catch { return false }
+  })
+  const ios = /iPhone|iPad|iPod/.test(navigator.userAgent)
+  const installed = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches
+  if (!ios || installed || hidden) return null
+
+  const close = () => {
+    try { localStorage.setItem('estudio-install-hint', 'off') } catch { /* sin almacenamiento */ }
+    setHidden(true)
+  }
+  return (
+    <div className="install-hint" role="note">
+      <strong>Instálala como app</strong>
+      <span>
+        Pulsa <b>Compartir</b> <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-label="icono compartir"><path d="M12 15V3.5M8 7.5l4-4 4 4M6 11H5a1.5 1.5 0 0 0-1.5 1.5v7A1.5 1.5 0 0 0 5 21h14a1.5 1.5 0 0 0 1.5-1.5v-7A1.5 1.5 0 0 0 19 11h-1" /></svg>
+        {' '}→ <b>Añadir a pantalla de inicio</b> con <b>Abrir como app web</b> activado, y ábrela desde el icono.
+      </span>
+      <button className="link" onClick={close}>Entendido</button>
+    </div>
+  )
+}

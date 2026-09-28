@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { backend, isDemo } from '../lib/backend.js'
 import { ThemeToggle } from '../theme.jsx'
-import { Brand } from '../components.jsx'
+import { Brand, InstallHint } from '../components.jsx'
 
 export default function Login({ appName }) {
   const [email, setEmail] = useState('')
@@ -29,6 +29,8 @@ export default function Login({ appName }) {
         <h1>Hola de nuevo</h1>
         <p className="muted">Proyectos, entregas y jornadas, sincronizados entre los dos.</p>
 
+        <InstallHint />
+
         {isDemo ? (
           <div className="stack">
             <p className="hint">
@@ -45,12 +47,16 @@ export default function Login({ appName }) {
           <form className="stack" onSubmit={submit}>
             <label>
               Email
-              <input type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+              <input
+                type="email" name="email" id="email" autoComplete="username" inputMode="email"
+                autoCapitalize="none" autoCorrect="off" spellCheck="false"
+                value={email} onChange={(e) => setEmail(e.target.value)} required
+              />
             </label>
             <label>
               Contraseña
               <input
-                type="password"
+                type="password" name="password" id="password"
                 autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -59,6 +65,7 @@ export default function Login({ appName }) {
             </label>
             {error && <p className="form-error">{error}</p>}
             <button type="submit" disabled={busy}>{busy ? 'Entrando…' : 'Entrar'}</button>
+            <p className="hint">La sesión queda iniciada en este dispositivo hasta que pulses “Salir”.</p>
           </form>
         )}
       </div>

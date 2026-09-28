@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { backend, isDemo } from './lib/backend.js'
-import { useData } from './lib/useData.js'
+import { useData, clearDataCache } from './lib/useData.js'
 import Login from './views/Login.jsx'
 import Inicio from './views/Inicio.jsx'
 import Proyectos from './views/Proyectos.jsx'
@@ -8,7 +8,7 @@ import Calendario from './views/Calendario.jsx'
 import Jornadas from './views/Jornadas.jsx'
 import Cobros from './views/Cobros.jsx'
 import { ThemeToggle } from './theme.jsx'
-import { Brand, Avatar, HoverTip } from './components.jsx'
+import { Brand, Avatar, HoverTip, InstallHint } from './components.jsx'
 import { Icon } from './icons.jsx'
 
 const APP_NAME = 'PRESTI, IVÁN'
@@ -26,7 +26,10 @@ export default function App() {
 
   useEffect(() => {
     backend.getUser().then(setUser)
-    return backend.onAuthChange(setUser)
+    return backend.onAuthChange((u) => {
+      if (!u) clearDataCache() // al salir no queda nada guardado en el dispositivo
+      setUser(u)
+    })
   }, [])
 
   if (user === undefined) return <div className="splash">Cargando…</div>
@@ -84,7 +87,7 @@ function Shell({ user }) {
           </div>
           <div className="side-actions">
             <ThemeToggle />
-            <button className="icon-round" onClick={() => backend.signOut()} title="Salir" aria-label="Salir">
+            <button className="icon-round" onClick={() => confirm('¿Cerrar sesión en este dispositivo?') && backend.signOut()} title="Salir" aria-label="Salir">
               <Icon name="logout" size={18} />
             </button>
           </div>
@@ -96,7 +99,7 @@ function Shell({ user }) {
         <Brand name={APP_NAME} />
         <div className="side-actions">
           <ThemeToggle />
-          <button className="icon-round" onClick={() => backend.signOut()} title="Salir" aria-label="Salir">
+          <button className="icon-round" onClick={() => confirm('¿Cerrar sesión en este dispositivo?') && backend.signOut()} title="Salir" aria-label="Salir">
             <Icon name="logout" size={18} />
           </button>
           <Avatar profile={me} />
@@ -104,6 +107,7 @@ function Shell({ user }) {
       </header>
 
       <div className="content">
+        <InstallHint />
         {isDemo && (
           <div className="demo-bar">
             Modo demo: datos de ejemplo guardados solo en este navegador.

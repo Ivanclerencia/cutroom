@@ -438,6 +438,17 @@ label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color:
 .table tbody tr { transition: background-color 0.15s; }
 .table tbody tr:hover { background: var(--surface-2); }
 
+/* Aviso de instalación (iPhone en Safari) */
+.install-hint {
+  display: flex; flex-direction: column; gap: 4px; margin: 12px 16px 0; padding: 14px 16px;
+  border-radius: 20px; background: var(--surface); box-shadow: var(--shadow), 0 0 0 1px var(--line);
+  font-size: 13px; color: var(--text-2); line-height: 1.45;
+}
+.install-hint strong { font-weight: 600; color: var(--text); }
+.install-hint svg { vertical-align: -2px; }
+.install-hint .link { align-self: flex-end; color: var(--warm-2); font-weight: 600; }
+.login-card .install-hint { margin: 4px 0 0; box-shadow: 0 0 0 1px var(--line); background: var(--surface-2); }
+
 /* Etiqueta flotante */
 .hover-tip {
   position: fixed; z-index: 100; pointer-events: none; transform: translate(-50%, calc(-100% - 10px));

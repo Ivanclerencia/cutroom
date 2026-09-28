@@ -3,11 +3,30 @@ import { backend, TABLES } from './backend.js'
 
 const empty = Object.fromEntries(TABLES.map((t) => [t, []]))
 
+// Copia local de los últimos datos vistos: la app se pinta al instante
+// al abrirla y luego se actualiza en segundo plano.
+const CACHE_PREFIX = 'estudio-cache-'
+const readCache = (userId) => {
+  try {
+    const raw = localStorage.getItem(CACHE_PREFIX + userId)
+    return raw ? { ...empty, ...JSON.parse(raw) } : null
+  } catch { return null }
+}
+const writeCache = (userId, data) => {
+  try { localStorage.setItem(CACHE_PREFIX + userId, JSON.stringify(data)) } catch { /* sin almacenamiento */ }
+}
+export const clearDataCache = () => {
+  try {
+    Object.keys(localStorage).filter((k) => k.startsWith(CACHE_PREFIX)).forEach((k) => localStorage.removeItem(k))
+  } catch { /* sin almacenamiento */ }
+}
+
 // Carga todas las tablas y las mantiene al día: cuando la otra persona
 // cambia algo, llega un aviso en tiempo real y se recarga esa tabla.
 export function useData(userId) {
-  const [data, setData] = useState(empty)
-  const [loading, setLoading] = useState(true)
+  const [cached] = useState(() => readCache(userId))
+  const [data, setData] = useState(cached ?? empty)
+  const [loading, setLoading] = useState(!cached)
   const [error, setError] = useState(null)
 
   const refresh = useCallback(async (table = '*') => {
@@ -29,15 +48,22 @@ export function useData(userId) {
     let alive = true
     refresh().then(() => alive && setLoading(false))
     const unsubscribe = backend.subscribe((table) => refresh(TABLES.includes(table) ? table : '*'))
-    // Por si se perdió algún aviso mientras el ordenador dormía
+    // Por si se perdió algún aviso mientras el móvil/ordenador estaba en reposo
     const onFocus = () => refresh()
+    const onVisible = () => document.visibilityState === 'visible' && refresh()
     window.addEventListener('focus', onFocus)
+    document.addEventListener('visibilitychange', onVisible)
     return () => {
       alive = false
       unsubscribe()
       window.removeEventListener('focus', onFocus)
+      document.removeEventListener('visibilitychange', onVisible)
     }
   }, [userId, refresh])
+
+  useEffect(() => {
+    if (userId && !loading) writeCache(userId, data)
+  }, [userId, loading, data])
 
   // Envuelve una escritura: la ejecuta, recarga la tabla y muestra el error si falla
   const run = useCallback(
