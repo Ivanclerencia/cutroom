@@ -74,7 +74,6 @@ export default function Inicio({ ctx, go }) {
       <div className="grid-3">
         {/* Tarjeta destacada: la próxima entrega */}
         <section className="card hero-card span-2">
-          <div className="orb" style={{ '--c': projectsById[next?.project_id]?.color ?? '#ff9a5a' }} />
           {next ? (
             <>
               <div className="hero-body">
