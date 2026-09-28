@@ -49,6 +49,7 @@ export default function Calendario({ ctx, go }) {
   const workOf = (iso) => (workdays[iso] ?? []).reduce((s, w) => s + Number(w.amount), 0)
   const plannedBy = byDate(planned, 'date')
   const planOf = (iso) => (plannedBy[iso] ?? []).reduce((s, w) => s + Number(w.amount), 0)
+  const acceptedOn = (iso) => (plannedBy[iso] ?? []).some((w) => w.status === 'aceptada')
   const weekTotal = weekDays.reduce((s, d) => s + workOf(d), 0)
 
   const dayWork = workdays[selected] ?? []
@@ -85,7 +86,7 @@ export default function Calendario({ ctx, go }) {
                   <span className="wk-head">
                     <span className="wk-wd">{weekday(iso).replace('.', '')}</span>
                     <span className="wk-num">{parseISO(iso).getDate()}</span>
-                    <WorkChip amount={work} /><WorkChip amount={planOf(iso)} planned />
+                    <WorkChip amount={work} /><WorkChip amount={planOf(iso)} planned accepted={acceptedOn(iso)} />
                   </span>
                   <span className="wk-items">
                     {dels.map((d) => (
@@ -121,7 +122,7 @@ export default function Calendario({ ctx, go }) {
                 data-tip={dayTip(deliveries[iso] ?? [], tasks[iso] ?? [], projectsById)}>
                 <span className="cal-day">
                   <span className="cal-num">{parseISO(iso).getDate()}</span>
-                  <WorkChip amount={work} /><WorkChip amount={planOf(iso)} planned />
+                  <WorkChip amount={work} /><WorkChip amount={planOf(iso)} planned accepted={acceptedOn(iso)} />
                 </span>
                 {(deliveries[iso] ?? []).map((d) => (
                   <span key={d.id} className={`cal-event ${d.status}`} style={{ '--c': projectsById[d.project_id]?.color }}
@@ -138,7 +139,7 @@ export default function Calendario({ ctx, go }) {
         </div>
         )}
         <p className="legend muted">
-          <WorkChip amount={1} /> jornada completa · <WorkChip amount={0.5} /> media · <WorkChip amount={1} planned /> prevista ·
+          <WorkChip amount={1} /> jornada completa · <WorkChip amount={0.5} /> media · <WorkChip amount={1} planned /> pedida · <WorkChip amount={1} planned accepted /> aceptada ·
           las barras de color son entregas; en la vista semanal, las tareas van con borde discontinuo
         </p>
       </section>
@@ -191,7 +192,7 @@ export default function Calendario({ ctx, go }) {
         )}
         {dayPlanned.length > 0 && (
           <>
-            <h4>Previstas</h4>
+            <h4>Pedidas</h4>
             <ul className="plan-list">
               {dayPlanned.map((w) => <PlannedRow key={w.id} w={w} ctx={ctx} />)}
             </ul>

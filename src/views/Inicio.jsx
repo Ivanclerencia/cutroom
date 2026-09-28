@@ -135,7 +135,7 @@ export default function Inicio({ ctx, go }) {
       {ctx.planned.length > 0 && (
         <section className="card">
           <div className="card-head">
-            <h3>{isAsistente ? 'Jornadas que te han pedido' : `Jornadas pedidas a ${asistente?.name ?? 'asistente'}`}</h3>
+            <h3>{isAsistente ? 'Tus jornadas pedidas' : `Jornadas pedidas a ${asistente?.name ?? 'asistente'}`}</h3>
             <button className="link" onClick={() => go('jornadas')}>Ver todas</button>
           </div>
           <ul className="plan-list">
@@ -200,6 +200,7 @@ function WeekStrip({ ctx, go }) {
     .reduce((s, w) => s + Number(w.amount), 0)
   const weekTotal = days.reduce((s, d) => s + worked(d), 0)
   const planOf = (iso) => ctx.planned.filter((w) => w.date === iso).reduce((s, w) => s + Number(w.amount), 0)
+  const acceptedOn = (iso) => ctx.planned.some((w) => w.date === iso && w.status === 'aceptada')
   const range = `${shortDate(days[0])} – ${shortDate(days[6])}`
 
   return (
@@ -242,7 +243,7 @@ function WeekStrip({ ctx, go }) {
               </span>
               <span className="week-foot">
                 {w > 0 || planOf(iso) > 0
-                  ? <><WorkChip amount={w} /><WorkChip amount={planOf(iso)} planned /></>
+                  ? <><WorkChip amount={w} /><WorkChip amount={planOf(iso)} planned accepted={acceptedOn(iso)} /></>
                   : <span className="week-empty">—</span>}
               </span>
             </button>

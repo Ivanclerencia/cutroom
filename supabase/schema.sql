@@ -131,7 +131,7 @@ create policy "jornadas lectura" on public.workdays for select to authenticated 
 -- Jornadas: ver migracion-01 (previstas)
 -- 'hecha' = trabajada (cuenta para cobros) · 'prevista' = pedida/planificada
 alter table public.workdays
-  add column if not exists status text not null default 'hecha' check (status in ('prevista', 'hecha'));
+  add column if not exists status text not null default 'hecha' check (status in ('prevista', 'aceptada', 'hecha'));
 alter table public.workdays
   add column if not exists created_by uuid default auth.uid() references public.profiles on delete set null;
 

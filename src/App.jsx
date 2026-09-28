@@ -13,7 +13,7 @@ import { Icon } from './icons.jsx'
 import { useToast, LivePill, SettingsSheet, FaceIdPrompt, useLock, LockScreen } from './chrome.jsx'
 import { BrandSplash, useBootSplash } from './burning.jsx'
 import { lockEnabled } from './lib/lock.js'
-import { weekday, shortDate } from './lib/dates.js'
+import { weekday, shortDate, today } from './lib/dates.js'
 
 const APP_NAME = 'Splice'
 
@@ -66,9 +66,11 @@ function Shell({ user }) {
   const isAsistente = me.role === 'asistente'
 
   // Jornadas previstas (pedidas) aparte: todas las sumas y cobros usan solo las hechas
-  const planned = data.workdays.filter((w) => w.status === 'prevista').sort((a, b) => a.date.localeCompare(b.date))
+  // Jornadas pedidas (prevista → aceptada) aparte: todas las sumas y cobros usan solo las hechas
+  const isPending = (w) => w.status === 'prevista' || w.status === 'aceptada'
+  const planned = data.workdays.filter(isPending).sort((a, b) => a.date.localeCompare(b.date))
   const ctx = {
-    data: { ...data, workdays: data.workdays.filter((w) => w.status !== 'prevista') },
+    data: { ...data, workdays: data.workdays.filter((w) => !isPending(w)) },
     planned, db, me, isAsistente, notify,
     projectsById: Object.fromEntries(data.projects.map((p) => [p.id, p])),
     profilesById: Object.fromEntries(data.profiles.map((p) => [p.id, p])),
@@ -79,7 +81,7 @@ function Shell({ user }) {
   const seen = useRef(null)
   useEffect(() => {
     if (loading) return
-    const plannedNow = new Map(planned.map((w) => [w.id, w]))
+    const plannedNow = new Map(planned.map((w) => [w.id, { ...w }]))
     const prev = seen.current
     seen.current = plannedNow
     if (!prev) return // primera carga: no avisar de lo que ya había
@@ -89,13 +91,21 @@ function Shell({ user }) {
         notify(`${ctx.profilesById[w.created_by]?.name ?? 'Te'} te ha pedido una jornada: ${when(w)}`)
       }
     }
+    const who = ctx.asistente?.name ?? 'La asistente'
     for (const w of prev.values()) {
-      const nowDone = !plannedNow.has(w.id) && data.workdays.some((x) => x.id === w.id && x.status !== 'prevista')
-      if (nowDone && !isAsistente) notify(`${ctx.asistente?.name ?? 'La asistente'} ha confirmado la jornada del ${when(w)}`)
+      if (isAsistente) continue
+      const now = plannedNow.get(w.id)
+      if (now && w.status === 'prevista' && now.status === 'aceptada') notify(`${who} ha aceptado la jornada del ${when(w)}`)
+      const nowDone = !now && data.workdays.some((x) => x.id === w.id && !isPending(x))
+      if (nowDone) notify(`${who} ha completado la jornada del ${when(w)}`)
     }
   }, [planned, loading]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const badges = { jornadas: isAsistente ? planned.length : 0 }
+  // Contador: pedidas por aceptar + aceptadas cuyo día ya llegó (para marcar hechas)
+  const hoy = today()
+  const badges = {
+    jornadas: isAsistente ? planned.filter((w) => w.status === 'prevista' || w.date <= hoy).length : 0,
+  }
   const tabs = TABS.filter((t) => !t.onlyAsistente || isAsistente)
   const current = tabs.find((t) => t.id === tab) ?? tabs[0]
   const View = current.view

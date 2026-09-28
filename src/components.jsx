@@ -26,7 +26,7 @@ export function Avatar({ profile, size }) {
 }
 
 // Marca de jornada: "1" sólida (completa) o "½" clara (media)
-export function WorkChip({ amount, planned }) {
+export function WorkChip({ amount, planned, accepted }) {
   const n = Number(amount) || 0
   if (n <= 0) return null
   const whole = Math.floor(n)
@@ -34,42 +34,56 @@ export function WorkChip({ amount, planned }) {
   const half = n < 1
   const kind = half ? 'Media jornada' : n === 1 ? 'Jornada completa' : `${String(n).replace('.', ',')} jornadas`
   return (
-    <span className={`work-chip${half ? ' half' : ''}${planned ? ' planned' : ''}`} title={planned ? `${kind} prevista` : kind}>
+    <span className={`work-chip${half ? ' half' : ''}${planned ? ' planned' : ''}${accepted ? ' accepted' : ''}`}
+      title={accepted ? `${kind} aceptada` : planned ? `${kind} pedida` : kind}>
       {label}
     </span>
   )
 }
 
-// Jornada prevista (pedida por el editor): la asistente la confirma cuando la hace
+// Jornada pedida por el editor: la asistente la acepta y, al acabar el día, la marca como hecha
 export function PlannedRow({ w, ctx }) {
   const { db, isAsistente, projectsById, profilesById, asistente } = ctx
   const by = profilesById[w.created_by]
-  const past = w.date < today()
-  const confirmDone = () => {
-    db.update('workdays', w.id, { status: 'hecha' })
-    ctx.notify('Jornada marcada como hecha')
+  const accepted = w.status === 'aceptada'
+  const t = today()
+  const past = w.date < t
+  const due = w.date <= t
+  const setStatus = (status, msg) => {
+    db.update('workdays', w.id, { status })
+    ctx.notify(msg)
   }
   const remove = () => {
-    if (confirm(isAsistente ? '¿Quitar esta jornada prevista?' : `¿Anular la jornada pedida a ${asistente?.name ?? 'asistente'}?`)) {
+    if (confirm(isAsistente ? '¿Rechazar esta jornada?' : `¿Anular la jornada pedida a ${asistente?.name ?? 'asistente'}?`)) {
       db.remove('workdays', w.id)
-      ctx.notify('Jornada prevista quitada')
+      ctx.notify(isAsistente ? 'Jornada rechazada' : 'Jornada anulada')
     }
   }
+  const note = accepted
+    ? (past ? (isAsistente ? '¿La hiciste?' : 'Aceptada · sin marcar hecha') : 'Aceptada')
+    : (past ? 'Sin aceptar' : isAsistente ? 'Pendiente de aceptar' : 'Esperando respuesta')
   return (
-    <li className={past ? 'plan-row past' : 'plan-row'}>
-      <WorkChip amount={w.amount} planned />
+    <li className={`plan-row ${accepted ? 'accepted' : 'requested'}${past ? ' past' : ''}`}>
+      <WorkChip amount={w.amount} planned accepted={accepted} />
       <div className="plan-main">
         <strong className="capitalize">{weekday(w.date).replace('.', '')} {shortDate(w.date)} · {w.amount == 1 ? 'Completa' : 'Media'}</strong>
         <span className="plan-meta">
           <ProjectTag project={projectsById[w.project_id]} />
           {w.note && <span>{w.note}</span>}
           {by && by.id !== asistente?.id && <span>pedida por {by.name}</span>}
-          {past && <span className="plan-past">{isAsistente ? '¿La hiciste?' : 'Sin confirmar'}</span>}
+          <span className={`plan-state ${accepted ? 'ok' : 'wait'}`}>{accepted && !past ? '✓ ' : ''}{note}</span>
         </span>
       </div>
       <div className="plan-actions">
-        {isAsistente && <button className="small" onClick={confirmDone}>Hecha</button>}
-        <button className="icon-btn" title="Quitar" onClick={remove}>×</button>
+        {isAsistente && !accepted && (
+          <button className="small" onClick={() => setStatus('aceptada', 'Jornada aceptada')}>Aceptar</button>
+        )}
+        {isAsistente && accepted && (
+          <button className={due ? 'small' : 'small ghost'} onClick={() => setStatus('hecha', 'Jornada hecha: ya cuenta para cobrar')}>
+            Hecha
+          </button>
+        )}
+        {(isAsistente || !accepted) && <button className="icon-btn" title={isAsistente ? 'Rechazar' : 'Anular'} onClick={remove}>×</button>}
       </div>
     </li>
   )

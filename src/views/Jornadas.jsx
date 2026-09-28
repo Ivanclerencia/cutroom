@@ -38,7 +38,7 @@ export default function Jornadas({ ctx }) {
       ) : asistente && (
         <section className="card">
           <h3>Pedir jornada a {asistente.name}</h3>
-          <p className="muted small">Quedará como prevista hasta que {asistente.name} la marque como hecha.</p>
+          <p className="muted small">{asistente.name} la aceptará y, cuando la haya trabajado, la marcará como hecha.</p>
           <WorkdayForm ctx={ctx} plan />
         </section>
       )}
@@ -46,7 +46,7 @@ export default function Jornadas({ ctx }) {
       {planned.length > 0 && (
         <section className="card">
           <div className="card-head">
-            <h3>Previstas</h3>
+            <h3>Pedidas y aceptadas</h3>
             <span className="count">{planned.length}</span>
           </div>
           <ul className="plan-list">

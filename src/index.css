@@ -749,6 +749,11 @@ label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color:
 .work-chip.planned {
   background: transparent; color: var(--warn); box-shadow: none; border: 1.5px dashed var(--warm);
 }
+.work-chip.planned.accepted { border-style: solid; background: var(--warm-soft); }
+.plan-row.accepted { border-style: solid; border-color: var(--warm); }
+.plan-state { font-weight: 500; }
+.plan-state.ok { color: var(--ok); }
+.plan-state.wait { color: var(--warn); }
 .cal-day .work-chip + .work-chip, .wk-head .work-chip + .work-chip, .week-foot .work-chip + .work-chip { margin-left: 3px; }
 .week-foot { gap: 3px; }
 .plan-list { display: flex; flex-direction: column; gap: 8px; }

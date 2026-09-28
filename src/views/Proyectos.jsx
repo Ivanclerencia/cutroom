@@ -206,7 +206,7 @@ function ProjectDetail({ project, ctx, onBack }) {
           <div className="fact">
             <span>Jornadas</span>
             <strong>{jornadas(days)}</strong>
-            {plannedDays > 0 && <small className="fact-sub">+ {String(plannedDays).replace('.', ',')} previstas</small>}
+            {plannedDays > 0 && <small className="fact-sub">+ {String(plannedDays).replace('.', ',')} pedidas</small>}
           </div>
           <label className="fact fact-wide">
             <span>Cliente</span>
