@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { today, shortDate, relative, daysBetween, weekday } from './lib/dates.js'
+import { BurningLogo } from './burning.jsx'
 
 export const PROJECT_STATUS = { activo: 'Activo', en_pausa: 'En pausa', entregado: 'Entregado', archivado: 'Archivado' }
 export const DELIVERY_STATUS = { pendiente: 'Pendiente', enviada: 'Enviada', aprobada: 'Aprobada' }
@@ -9,7 +10,7 @@ export const COLORS = ['#4f6bed', '#e0533d', '#2f9e6e', '#8a5cf6', '#d4912a', '#
 export function Brand({ name }) {
   return (
     <div className="brand">
-      <img className="brand-mark" src={`${import.meta.env.BASE_URL}brand.png`} alt="" width="30" height="30" />
+      <span className="brand-mark"><BurningLogo size={17} /></span>
       <span className="brand-name">{name}<small>by Burning</small></span>
     </div>
   )
