@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { backend, TABLES } from './backend.js'
 
 const empty = Object.fromEntries(TABLES.map((t) => [t, []]))
@@ -38,6 +38,12 @@ export function useData(userId) {
   const [loading, setLoading] = useState(!cached)
   const [error, setError] = useState(null)
   const [live, setLive] = useState('connecting') // 'live' | 'connecting' | 'offline'
+  // Filas que acabo de tocar yo: sirve para avisar solo de los cambios del otro
+  const mine = useRef(new Map())
+  const markMine = (id) => {
+    if (id) mine.current.set(id, Date.now())
+  }
+  const isMine = useCallback((id) => Date.now() - (mine.current.get(id) ?? 0) < 20000, [])
 
   const refresh = useCallback(async (table = '*') => {
     const tables = table === '*' ? TABLES : [table]
@@ -102,18 +108,24 @@ export function useData(userId) {
     insert: (table, row) => {
       const owner = table === 'workdays' ? { user_id: userId } : {}
       const full = { id: crypto.randomUUID(), ...DEFAULTS[table], ...owner, ...row }
+      markMine(full.id)
       return run(
         table,
         (d) => ({ ...d, [table]: [...d[table], { created_at: new Date().toISOString(), ...full }] }),
         () => backend.insert(table, full),
       )
     },
-    update: (table, id, patch) => run(
+    update: (table, id, patch) => {
+      markMine(id)
+      return run(
       table,
       (d) => ({ ...d, [table]: d[table].map((r) => (r.id === id ? { ...r, ...patch } : r)) }),
       () => backend.update(table, id, patch),
-    ),
-    remove: (table, id) => run(
+      )
+    },
+    remove: (table, id) => {
+      markMine(id)
+      return run(
       table === 'projects' ? '*' : table,
       (d) => {
         const next = { ...d, [table]: d[table].filter((r) => r.id !== id) }
@@ -125,7 +137,8 @@ export function useData(userId) {
         return next
       },
       () => backend.remove(table, id),
-    ),
+      )
+    },
     upsert: (table, row, onConflict = 'id') => run(
       table,
       (d) => {
@@ -139,5 +152,5 @@ export function useData(userId) {
     ),
   }
 
-  return { data, loading, error, clearError: () => setError(null), db, live, refresh }
+  return { data, loading, error, clearError: () => setError(null), db, live, refresh, isMine }
 }

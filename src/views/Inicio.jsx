@@ -2,7 +2,7 @@ import { useState } from 'react'
 import {
   today, monthOf, monthName, daysBetween, money, jornadas, weekday, shortDate, longDate, parseISO, toISO, addDays,
 } from '../lib/dates.js'
-import { ProjectTag, DueLabel, Badge, TaskRow, DELIVERY_STATUS, WorkdayForm, deliveryTip, tasksTip, dayTip, WorkChip, PlannedRow } from '../components.jsx'
+import { ProjectTag, DueLabel, TaskRow, DELIVERY_STATUS, WorkdayForm, PillSelect, deliveryTip, tasksTip, dayTip, WorkChip, PlannedRow } from '../components.jsx'
 import { Icon } from '../icons.jsx'
 
 const pad = (n) => String(n).padStart(2, '0')
@@ -147,26 +147,7 @@ export default function Inicio({ ctx, go }) {
       <WeekStrip ctx={ctx} go={go} />
 
       <div className="grid-2">
-        <section className="card">
-          <div className="card-head">
-            <h3>Próximas entregas</h3>
-            <button className="link" onClick={() => go('calendario')}>Calendario</button>
-          </div>
-          {deliveries.length === 0 ? <p className="empty">No hay entregas en las próximas 3 semanas.</p> : (
-            <ul className="list">
-              {deliveries.map((d) => (
-                <li key={d.id} className="list-row">
-                  <div className="list-main">
-                    <strong>{d.title}</strong>
-                    <DueLabel date={d.due_date} done={d.status !== 'pendiente'} />
-                  </div>
-                  <ProjectTag project={projectsById[d.project_id]} onClick={() => go('proyectos', d.project_id)} />
-                  <Badge kind={d.status}>{DELIVERY_STATUS[d.status]}</Badge>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
+        <DeliveriesCard ctx={ctx} go={go} />
 
         <section className="card">
           <div className="card-head">
@@ -250,6 +231,48 @@ function WeekStrip({ ctx, go }) {
           )
         })}
       </div>
+    </section>
+  )
+}
+
+// Entregas de todos los proyectos, compartidas: próximas (pendientes) y entregadas
+function DeliveriesCard({ ctx, go }) {
+  const { data, db, projectsById } = ctx
+  const [tab, setTab] = useState('proximas')
+  const live = data.deliveries.filter((d) => projectsById[d.project_id]?.status !== 'archivado')
+  const pending = live.filter((d) => d.status === 'pendiente').sort((a, b) => a.due_date.localeCompare(b.due_date))
+  const delivered = live.filter((d) => d.status !== 'pendiente').sort((a, b) => b.due_date.localeCompare(a.due_date)).slice(0, 10)
+  const rows = tab === 'proximas' ? pending : delivered
+
+  return (
+    <section className="card">
+      <div className="card-head">
+        <h3>Entregas</h3>
+        <div className="segmented small">
+          <button className={tab === 'proximas' ? 'on' : ''} onClick={() => setTab('proximas')}>Próximas {pending.length > 0 && `· ${pending.length}`}</button>
+          <button className={tab === 'hechas' ? 'on' : ''} onClick={() => setTab('hechas')}>Entregadas</button>
+        </div>
+      </div>
+      {rows.length === 0 ? (
+        <p className="empty">{tab === 'proximas' ? 'No hay entregas pendientes.' : 'Aún no hay entregas hechas.'}</p>
+      ) : (
+        <ul className="list">
+          {rows.map((d) => (
+            <li key={d.id} className="list-row">
+              <div className="list-main">
+                <strong>{d.title}</strong>
+                <DueLabel date={d.due_date} done={d.status !== 'pendiente'} />
+              </div>
+              <ProjectTag project={projectsById[d.project_id]} onClick={() => go('proyectos', d.project_id)} />
+              <PillSelect value={d.status} options={DELIVERY_STATUS} label="Estado de la entrega"
+                onChange={(v) => {
+                  db.update('deliveries', d.id, { status: v })
+                  ctx.notify(`“${d.title}”: ${DELIVERY_STATUS[v].toLowerCase()}`)
+                }} />
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
   )
 }

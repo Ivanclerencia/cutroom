@@ -53,7 +53,7 @@ export default function App() {
 }
 
 function Shell({ user }) {
-  const { data, loading, error, clearError, db, live, refresh } = useData(user.id)
+  const { data, loading, error, clearError, db, live, refresh, isMine } = useData(user.id)
   const [tab, setTab] = useState(() => {
     try { return localStorage.getItem('estudio-tab') || 'inicio' } catch { return 'inicio' }
   })
@@ -100,6 +100,38 @@ function Shell({ user }) {
       if (nowDone) notify(`${who} ha completado la jornada del ${when(w)}`)
     }
   }, [planned, loading]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Avisos de lo que hace el otro: entregas nuevas o entregadas, y tareas que te asigna
+  const lastSeen = useRef(null)
+  useEffect(() => {
+    if (loading) return
+    const snap = {
+      deliveries: new Map(data.deliveries.map((d) => [d.id, d])),
+      tasks: new Map(data.tasks.map((t) => [t.id, t])),
+    }
+    const prev = lastSeen.current
+    lastSeen.current = snap
+    if (!prev) return
+    const other = data.profiles.find((p) => p.id !== me.id)?.name ?? 'Alguien'
+    const proj = (id) => ctx.projectsById[id]?.name
+    const msgs = []
+    for (const d of snap.deliveries.values()) {
+      if (isMine(d.id)) continue
+      const before = prev.deliveries.get(d.id)
+      if (!before) msgs.push(`${other} ha añadido la entrega “${d.title}”${proj(d.project_id) ? ` · ${proj(d.project_id)}` : ''} · ${shortDate(d.due_date)}`)
+      else if (before.status !== d.status) {
+        const label = { pendiente: 'pendiente', enviada: 'entregada', aprobada: 'aprobada' }[d.status]
+        msgs.push(`${other} ha marcado “${d.title}” como ${label}`)
+      }
+    }
+    for (const t of snap.tasks.values()) {
+      if (isMine(t.id) || t.assignee !== me.id) continue
+      const before = prev.tasks.get(t.id)
+      if (!before || before.assignee !== me.id) msgs.push(`${other} te ha asignado una tarea: “${t.title}”`)
+    }
+    if (msgs.length === 1) notify(msgs[0])
+    else if (msgs.length > 1) notify(`${msgs.length} novedades de ${other}. ${msgs[0]}`)
+  }, [data.deliveries, data.tasks, loading]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Contador: pedidas por aceptar + aceptadas cuyo día ya llegó (para marcar hechas)
   const hoy = today()
