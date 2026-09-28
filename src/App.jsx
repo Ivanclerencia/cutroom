@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { backend, isDemo } from './lib/backend.js'
 import { useData, clearDataCache } from './lib/useData.js'
 import Login from './views/Login.jsx'
@@ -11,6 +11,9 @@ import { ThemeToggle } from './theme.jsx'
 import { Brand, Avatar, HoverTip, InstallHint } from './components.jsx'
 import { Icon } from './icons.jsx'
 import { useToast, LivePill, SettingsSheet, FaceIdPrompt, useLock, LockScreen } from './chrome.jsx'
+import { BrandSplash, useBootSplash } from './burning.jsx'
+import { lockEnabled } from './lib/lock.js'
+import { weekday, shortDate } from './lib/dates.js'
 
 const APP_NAME = 'Splice'
 
@@ -38,8 +41,15 @@ export default function App() {
     })
   }, [])
 
-  if (!user) return <Login appName={APP_NAME} />
-  return <Shell user={user} />
+  const boot = useBootSplash()
+  // Con Face ID activado, la propia pantalla de bloqueo hace de arranque
+  const locked = user && lockEnabled(user.id)
+  return (
+    <>
+      {user ? <Shell user={user} /> : <Login appName={APP_NAME} />}
+      {boot !== 'gone' && !locked && <BrandSplash leaving={boot === 'leaving'} />}
+    </>
+  )
 }
 
 function Shell({ user }) {
@@ -65,6 +75,27 @@ function Shell({ user }) {
     asistente: data.profiles.find((p) => p.role === 'asistente'),
   }
 
+  // Avisos en directo: jornada pedida (a la asistente) y jornada confirmada (al editor)
+  const seen = useRef(null)
+  useEffect(() => {
+    if (loading) return
+    const plannedNow = new Map(planned.map((w) => [w.id, w]))
+    const prev = seen.current
+    seen.current = plannedNow
+    if (!prev) return // primera carga: no avisar de lo que ya había
+    const when = (w) => `${weekday(w.date).replace('.', '')} ${shortDate(w.date)}`
+    for (const w of plannedNow.values()) {
+      if (!prev.has(w.id) && isAsistente && w.created_by !== me.id) {
+        notify(`${ctx.profilesById[w.created_by]?.name ?? 'Te'} te ha pedido una jornada: ${when(w)}`)
+      }
+    }
+    for (const w of prev.values()) {
+      const nowDone = !plannedNow.has(w.id) && data.workdays.some((x) => x.id === w.id && x.status !== 'prevista')
+      if (nowDone && !isAsistente) notify(`${ctx.asistente?.name ?? 'La asistente'} ha confirmado la jornada del ${when(w)}`)
+    }
+  }, [planned, loading]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const badges = { jornadas: isAsistente ? planned.length : 0 }
   const tabs = TABS.filter((t) => !t.onlyAsistente || isAsistente)
   const current = tabs.find((t) => t.id === tab) ?? tabs[0]
   const View = current.view
@@ -92,6 +123,7 @@ function Shell({ user }) {
             <button key={t.id} className={t.id === current.id ? 'side-item active' : 'side-item'} onClick={() => go(t.id)}>
               <Icon name={t.icon} />
               {t.label}
+              {badges[t.id] > 0 && <span className="nav-badge">{badges[t.id]}</span>}
             </button>
           ))}
         </nav>
@@ -159,11 +191,12 @@ function Shell({ user }) {
           <button key={t.id} className={t.id === current.id ? 'bottom-item active' : 'bottom-item'}
             onClick={() => go(t.id)} title={t.label} aria-label={t.label}>
             <Icon name={t.icon} size={23} />
+            {badges[t.id] > 0 && <span className="nav-badge">{badges[t.id]}</span>}
           </button>
         ))}
       </nav>
 
-      {locked && <LockScreen user={user} appName={APP_NAME} onUnlock={unlockApp} />}
+      {locked && <LockScreen user={user} onUnlock={unlockApp} />}
     </div>
   )
 }

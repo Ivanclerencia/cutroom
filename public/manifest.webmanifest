@@ -1,11 +1,11 @@
 {
   "name": "Splice",
   "short_name": "Splice",
-  "description": "Proyectos, entregas y jornadas del equipo de montaje",
+  "description": "Splice by Burning · proyectos, entregas y jornadas",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#241a4f",
+  "background_color": "#000000",
   "theme_color": "#ececec",
   "icons": [
     {

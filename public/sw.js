@@ -71,6 +71,7 @@ self.addEventListener('fetch', (e) => {
   const { request } = e
   const url = new URL(request.url)
   if (request.method !== 'GET' || url.origin !== self.location.origin) return
+  if (url.pathname.endsWith('/version.json')) return // siempre de la red: sirve para detectar versiones nuevas
   if (request.mode === 'navigate') return e.respondWith(page(request))
   if (url.pathname.includes('/assets/')) return e.respondWith(asset(request))
   e.respondWith(staleWhileRevalidate(request))

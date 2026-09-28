@@ -10,7 +10,7 @@ export function Brand({ name }) {
   return (
     <div className="brand">
       <img className="brand-mark" src={`${import.meta.env.BASE_URL}brand.png`} alt="" width="30" height="30" />
-      <span className="brand-name">{name}</span>
+      <span className="brand-name">{name}<small>by Burning</small></span>
     </div>
   )
 }

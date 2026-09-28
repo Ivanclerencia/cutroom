@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from 'react'
 import { backend } from './lib/backend.js'
 import { lockAvailable, lockEnabled, enableLock, disableLock, unlock, bioName } from './lib/lock.js'
 import { ThemeToggle } from './theme.jsx'
-import { Avatar, Brand } from './components.jsx'
+import { Avatar } from './components.jsx'
+import { BrandSplash } from './burning.jsx'
 import { Icon } from './icons.jsx'
 
 // ---- Aviso flotante ("Proyecto creado") ------------------------------------
@@ -155,21 +156,22 @@ export function useLock(user) {
   return [locked, () => setLocked(false)]
 }
 
-export function LockScreen({ user, appName, onUnlock }) {
-  const [state, setState] = useState('idle') // idle | checking | failed
+export function LockScreen({ user, onUnlock }) {
+  const [state, setState] = useState('idle') // idle | checking | failed | leaving
   const tried = useRef(false)
 
   const attempt = async () => {
     setState('checking')
     try {
       await unlock(user.id)
-      onUnlock()
+      setState('leaving')
+      setTimeout(onUnlock, 420)
     } catch {
       setState('failed')
     }
   }
 
-  // Lo pide solo al abrir; si el sistema exige un toque, queda el botón
+  // Pide Face ID nada más abrir; si el sistema exige un toque, queda el botón
   useEffect(() => {
     if (tried.current) return
     tried.current = true
@@ -177,21 +179,22 @@ export function LockScreen({ user, appName, onUnlock }) {
   })
 
   return (
-    <div className="lock">
-      <Brand name={appName} />
-      <div className="lock-face" aria-hidden="true">
-        <svg viewBox="0 0 48 48" width="56" height="56" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
-          <path d="M6 16V10a4 4 0 0 1 4-4h6M32 6h6a4 4 0 0 1 4 4v6M42 32v6a4 4 0 0 1-4 4h-6M16 42h-6a4 4 0 0 1-4-4v-6" />
-          <path d="M17 18v3M31 18v3M24 18v9h-2M18 33c3.5 3 8.5 3 12 0" />
-        </svg>
-      </div>
-      <p className="lock-text">{state === 'failed' ? 'No se ha podido verificar' : 'Splice está bloqueada'}</p>
-      <button className="lock-btn" onClick={attempt} disabled={state === 'checking'}>
-        {state === 'checking' ? 'Verificando…' : `Desbloquear con ${bioName}`}
-      </button>
-      <button className="link" onClick={() => confirm('Se cerrará la sesión y podrás entrar con tu contraseña. ¿Seguir?') && backend.signOut()}>
-        Entrar con contraseña
-      </button>
-    </div>
+    <BrandSplash leaving={state === 'leaving'}>
+      {state === 'failed' && <p className="splash-msg">No se ha podido verificar</p>}
+      {state !== 'leaving' && (
+        <>
+          <button className="splash-btn" onClick={attempt} disabled={state === 'checking'}>
+            <svg viewBox="0 0 48 48" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
+              <path d="M6 16V10a4 4 0 0 1 4-4h6M32 6h6a4 4 0 0 1 4 4v6M42 32v6a4 4 0 0 1-4 4h-6M16 42h-6a4 4 0 0 1-4-4v-6" />
+              <path d="M17 18v3M31 18v3M24 18v9h-2M18 33c3.5 3 8.5 3 12 0" />
+            </svg>
+            {state === 'checking' ? 'Verificando…' : `Entrar con ${bioName}`}
+          </button>
+          <button className="splash-link" onClick={() => confirm('Se cerrará la sesión y podrás entrar con tu contraseña. ¿Seguir?') && backend.signOut()}>
+            Usar contraseña
+          </button>
+        </>
+      )}
+    </BrandSplash>
   )
 }

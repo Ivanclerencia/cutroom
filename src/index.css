@@ -442,7 +442,40 @@ label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color:
 .table tbody tr { transition: background-color 0.15s; }
 .table tbody tr:hover { background: var(--surface-2); }
 
-/* ---------- Carcasa: aviso, en directo, ajustes, bloqueo ---------- */
+/* Contador en el menú (jornadas pendientes de aceptar) */
+.nav-badge {
+  min-width: 19px; height: 19px; padding: 0 5px; border-radius: 999px; display: inline-grid; place-items: center;
+  background: #ff3b30; color: #fff; font-size: 11px; font-weight: 700; line-height: 1;
+}
+.side-item .nav-badge { margin-left: auto; }
+.bottom-item .nav-badge { position: absolute; top: -2px; right: -2px; box-shadow: 0 0 0 2px var(--bg); }
+
+/* ---------- Arranque Splice by Burning ---------- */
+.splash-screen {
+  position: fixed; inset: 0; z-index: 400; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: #000; color: #fff; padding: env(safe-area-inset-top) 24px env(safe-area-inset-bottom);
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', system-ui, sans-serif;
+}
+.splash-screen.leaving { animation: splash-out 0.45s cubic-bezier(0.4, 0, 0.2, 1) forwards; pointer-events: none; }
+.splash-brand { display: flex; flex-direction: column; align-items: center; }
+.splash-name { margin-top: 22px; font-size: 30px; font-weight: 300; letter-spacing: -0.03em; line-height: 1; }
+.splash-by { margin-top: 8px; font-size: 11px; font-weight: 500; letter-spacing: 0.22em; text-transform: uppercase; opacity: 0.5; }
+.splash-actions {
+  position: absolute; left: 0; right: 0; bottom: calc(56px + env(safe-area-inset-bottom));
+  display: flex; flex-direction: column; align-items: center; gap: 14px; animation: fade-in 0.4s ease-out;
+}
+.splash-btn {
+  display: inline-flex; align-items: center; gap: 10px; padding: 14px 26px; font-size: 15px;
+  background: #fff; color: #000; border-radius: 999px;
+}
+.splash-link { background: none; color: rgba(255, 255, 255, 0.55); padding: 6px; font-size: 13px; }
+.splash-link:hover { color: #fff; opacity: 1; }
+.splash-msg { color: #ff8a80; font-size: 13px; }
+@keyframes splash-out { to { opacity: 0; transform: scale(1.03); } }
+
+.brand-name small { display: block; font-size: 9.5px; font-weight: 500; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); margin-top: 1px; }
+
+
 .desktop-only { }
 .mobile-only { display: none !important; }
 
@@ -525,19 +558,6 @@ label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color:
 .switch.on i { transform: translateX(20px); }
 .switch:hover { opacity: 1; }
 
-/* Pantalla de bloqueo con Face ID */
-.lock {
-  position: fixed; inset: 0; z-index: 300; display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 18px; padding: 24px; background: var(--bg); text-align: center; animation: fade-in 0.2s ease-out;
-}
-.lock::before { content: ''; position: absolute; inset: 0; z-index: -1; background: var(--glow); }
-.lock .brand { margin-bottom: 24px; }
-.lock-face {
-  width: 96px; height: 96px; border-radius: 28px; display: grid; place-items: center; color: var(--text);
-  background: var(--surface); box-shadow: var(--shadow), 0 0 0 1px var(--line);
-}
-.lock-text { font-size: 22px; font-weight: 300; letter-spacing: -0.02em; }
-.lock-btn { padding: 13px 26px; font-size: 15px; }
 
 .faceid-offer { margin: 0 0 20px; }
 .faceid-offer .row { margin-top: 6px; }

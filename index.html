@@ -10,6 +10,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
     <meta name="apple-mobile-web-app-title" content="Splice" />
     <title>Splice</title>
     <link rel="preconnect" href="%VITE_SUPABASE_URL%" crossorigin />
@@ -26,6 +27,13 @@
     </script>
   </head>
   <body>
+    <div id="boot" class="splash-screen" style="position:fixed;inset:0;z-index:400;background:#000;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Inter',system-ui,sans-serif">
+      <div class="splash-brand" style="display:flex;flex-direction:column;align-items:center">
+        <svg viewBox="620 480 650 860" width="54" height="72" fill="currentColor" aria-label="Burning"><path d="M950 493H1060V683H1150L1153 782L1252 783V949H636L635 797H747L749 687L849 686L850 592H950Z"/><path d="M638 990L1252 991V1154L1141 1155L1140 1260L1039 1261L1038 1326H836V1262H738L735 1192L638 1191Z"/></svg>
+        <div class="splash-name">Splice</div>
+        <div class="splash-by">by Burning</div>
+      </div>
+    </div>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
