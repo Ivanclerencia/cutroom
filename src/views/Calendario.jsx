@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { today, monthOf, addMonths, parseISO, toISO, addDays, monthName, longDate, jornadas } from '../lib/dates.js'
+import { today, monthOf, addMonths, parseISO, toISO, addDays, monthName, longDate, shortDate, weekday, jornadas } from '../lib/dates.js'
 import { ProjectTag, Badge, DELIVERY_STATUS, WorkdayForm, deliveryTip, tasksTip, dayTip } from '../components.jsx'
 
 const WEEKDAYS = ['L', 'M', 'X', 'J', 'V', 'S', 'D']
@@ -8,6 +8,24 @@ export default function Calendario({ ctx, go }) {
   const { data, db, projectsById, isAsistente, asistente } = ctx
   const [month, setMonth] = useState(monthOf(today()))
   const [selected, setSelected] = useState(today())
+  const [view, setView] = useState(() => {
+    try { return localStorage.getItem('estudio-cal-view') || 'mes' } catch { return 'mes' }
+  })
+  const changeView = (v) => {
+    setView(v)
+    try { localStorage.setItem('estudio-cal-view', v) } catch { /* sin almacenamiento */ }
+    if (v === 'mes') setMonth(monthOf(selected))
+  }
+
+  // Semana (lunes a domingo) del día seleccionado
+  const sel = parseISO(selected)
+  const monday = addDays(sel, -((sel.getDay() + 6) % 7))
+  const weekDays = Array.from({ length: 7 }, (_, i) => toISO(addDays(monday, i)))
+  const moveWeek = (n) => {
+    const next = toISO(addDays(sel, n * 7))
+    setSelected(next)
+    setMonth(monthOf(next))
+  }
 
   // Rejilla de semanas completas, empezando en lunes
   const first = parseISO(month)
@@ -28,21 +46,66 @@ export default function Calendario({ ctx, go }) {
   const monthTotal = data.workdays
     .filter((w) => w.user_id === asistente?.id && monthOf(w.date) === month)
     .reduce((s, w) => s + Number(w.amount), 0)
+  const workOf = (iso) => (workdays[iso] ?? []).reduce((s, w) => s + Number(w.amount), 0)
+  const weekTotal = weekDays.reduce((s, d) => s + workOf(d), 0)
 
   const dayWork = workdays[selected] ?? []
   const dayDeliveries = deliveries[selected] ?? []
   const dayTasks = tasks[selected] ?? []
 
   return (
-    <div className="split cal-split">
+    <div className={view === 'semana' ? 'split cal-split week-mode' : 'split cal-split'}>
       <section className="card calendar">
         <div className="cal-head">
-          <button className="ghost small" onClick={() => setMonth(addMonths(month, -1))} aria-label="Mes anterior">‹</button>
-          <h3>{monthName(month)}</h3>
-          <button className="ghost small" onClick={() => setMonth(addMonths(month, 1))} aria-label="Mes siguiente">›</button>
+          <button className="ghost small" onClick={() => (view === 'mes' ? setMonth(addMonths(month, -1)) : moveWeek(-1))}
+            aria-label={view === 'mes' ? 'Mes anterior' : 'Semana anterior'}>‹</button>
+          <h3>{view === 'mes' ? monthName(month) : `${shortDate(weekDays[0])} – ${shortDate(weekDays[6])}`}</h3>
+          <button className="ghost small" onClick={() => (view === 'mes' ? setMonth(addMonths(month, 1)) : moveWeek(1))}
+            aria-label={view === 'mes' ? 'Mes siguiente' : 'Semana siguiente'}>›</button>
           <button className="ghost small" onClick={() => { setMonth(monthOf(today())); setSelected(today()) }}>Hoy</button>
-          <span className="muted cal-total">{jornadas(monthTotal)} este mes</span>
+          <span className="muted cal-total">{view === 'mes' ? `${jornadas(monthTotal)} este mes` : `${jornadas(weekTotal)} esta semana`}</span>
+          <div className="segmented small cal-switch">
+            <button className={view === 'semana' ? 'on' : ''} onClick={() => changeView('semana')}>Semana</button>
+            <button className={view === 'mes' ? 'on' : ''} onClick={() => changeView('mes')}>Mes</button>
+          </div>
         </div>
+        {view === 'semana' ? (
+          <div className="wk">
+            {weekDays.map((iso) => {
+              const work = workOf(iso)
+              const dels = deliveries[iso] ?? []
+              const dayT = tasks[iso] ?? []
+              const cls = ['wk-day', iso === today() && 'today', iso === selected && 'selected', work > 0 && 'worked']
+                .filter(Boolean).join(' ')
+              return (
+                <button key={iso} className={cls} onClick={() => setSelected(iso)}>
+                  <span className="wk-head">
+                    <span className="wk-wd">{weekday(iso).replace('.', '')}</span>
+                    <span className="wk-num">{parseISO(iso).getDate()}</span>
+                    {work > 0 && <span className="work-chip">{work === 0.5 ? '½' : work}</span>}
+                  </span>
+                  <span className="wk-items">
+                    {dels.map((d) => (
+                      <span key={d.id} className={`wk-item wk-delivery ${d.status}`} style={{ '--c': projectsById[d.project_id]?.color }}
+                        data-tip={deliveryTip(d, projectsById[d.project_id])}>
+                        <small>{projectsById[d.project_id]?.name ?? 'Sin proyecto'}</small>
+                        {d.title}
+                      </span>
+                    ))}
+                    {dayT.map((t) => (
+                      <span key={t.id} className="wk-item wk-task" style={{ '--c': projectsById[t.project_id]?.color }}
+                        data-tip={tasksTip([t], projectsById)}>
+                        <small>{projectsById[t.project_id]?.name ?? 'Sin proyecto'}</small>
+                        {t.title}
+                      </span>
+                    ))}
+                    {dels.length + dayT.length === 0 && <span className="wk-empty">—</span>}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+        ) : (
         <div className="cal-grid">
           {WEEKDAYS.map((w) => <div key={w} className="cal-wd">{w}</div>)}
           {cells.map((iso) => {
@@ -70,9 +133,10 @@ export default function Calendario({ ctx, go }) {
             )
           })}
         </div>
+        )}
         <p className="legend muted">
           <span className="work-chip">1</span> jornada completa · <span className="work-chip">½</span> media jornada ·
-          las barras de color son entregas
+          las barras de color son entregas; en la vista semanal, las tareas van con borde discontinuo
         </p>
       </section>
 
