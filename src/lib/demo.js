@@ -132,7 +132,11 @@ export function createDemoBackend() {
         return next
       })
     },
-    subscribe(cb) { changeListeners.add(cb); return () => changeListeners.delete(cb) },
+    subscribe(cb, onStatus = () => {}) {
+      changeListeners.add(cb)
+      onStatus('live')
+      return () => changeListeners.delete(cb)
+    },
     reset() { localStorage.removeItem(DATA_KEY); emit('*') },
   }
 }

@@ -104,7 +104,10 @@ export default function Inicio({ ctx, go }) {
         <section className="card">
           <div className="card-head">
             <h3>{monthName(month)}</h3>
-            <button className="link" onClick={() => go('jornadas')}>Ver todo</button>
+            {isAsistente && !adding
+              ? <button className="chip-btn mobile-only" onClick={() => setAdding(true)}>+ Apuntar</button>
+              : null}
+            <button className="link desktop-only" onClick={() => go('jornadas')}>Ver todo</button>
           </div>
           <div className="big-number">
             {num(total)}<small>/{capacity}</small>
@@ -125,7 +128,7 @@ export default function Inicio({ ctx, go }) {
           )}
           {isAsistente && (adding
             ? <WorkdayForm ctx={ctx} onDone={() => setAdding(false)} />
-            : <button onClick={() => setAdding(true)}>Apuntar jornada</button>)}
+            : <button className="desktop-only" onClick={() => setAdding(true)}>Apuntar jornada</button>)}
         </section>
       </div>
 

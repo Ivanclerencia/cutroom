@@ -102,13 +102,15 @@ export function NewTaskForm({ ctx, projectId }) {
   const submit = async (e) => {
     e.preventDefault()
     if (!title.trim() || !(projectId ?? pid)) return
-    const ok = await ctx.db.insert('tasks', {
+    ctx.db.insert('tasks', {
       project_id: projectId ?? pid,
       title: title.trim(),
       assignee: assignee || null,
       due_date: due || null,
     })
-    if (ok) { setTitle(''); setDue('') }
+    setTitle('')
+    setDue('')
+    ctx.notify('Tarea añadida')
   }
 
   return (
@@ -146,11 +148,10 @@ export function WorkdayForm({ ctx, date: initialDate, onDone }) {
 
   const submit = async (e) => {
     e.preventDefault()
-    const ok = await db.insert('workdays', { date, amount, project_id: projectId || null, note: note.trim() || null })
-    if (ok) {
-      setNote('')
-      onDone?.()
-    }
+    db.insert('workdays', { date, amount, project_id: projectId || null, note: note.trim() || null })
+    setNote('')
+    ctx.notify(amount === 1 ? 'Jornada completa apuntada' : 'Media jornada apuntada')
+    onDone?.()
   }
 
   return (

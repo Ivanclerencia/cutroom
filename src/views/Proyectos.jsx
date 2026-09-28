@@ -32,14 +32,21 @@ export default function Proyectos({ ctx, focusProject, setFocusProject }) {
     .sort((a, b) => a.name.localeCompare(b.name, 'es'))
   const selected = data.projects.find((p) => p.id === focusProject) ?? visible[0]
 
-  const create = async (e) => {
+  // Se crea al instante en pantalla: se cierra el formulario, se abre el proyecto
+  // nuevo y sale un aviso, así no hay forma de crearlo dos veces sin querer
+  const create = (e) => {
     e.preventDefault()
     const form = new FormData(e.currentTarget)
     const name = form.get('name').trim()
     if (!name) return
+    const id = crypto.randomUUID()
     const color = COLORS[data.projects.length % COLORS.length]
-    const ok = await db.insert('projects', { name, client: form.get('client').trim() || null, color })
-    if (ok) setCreating(false)
+    setCreating(false)
+    setFilter('activos')
+    setFocusProject(id)
+    ctx.notify(`Proyecto “${name}” creado`)
+    db.insert('projects', { id, name, client: form.get('client').trim() || null, color })
+    setTimeout(() => document.querySelector('.detail')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60)
   }
 
   return (
@@ -113,13 +120,15 @@ function ProjectDetail({ project, ctx }) {
     const form = e.currentTarget
     const f = new FormData(form)
     if (!f.get('title').trim() || !f.get('due_date')) return
-    const ok = await db.insert('deliveries', { project_id: project.id, title: f.get('title').trim(), due_date: f.get('due_date') })
-    if (ok) form.reset()
+    db.insert('deliveries', { project_id: project.id, title: f.get('title').trim(), due_date: f.get('due_date') })
+    form.reset()
+    ctx.notify('Entrega añadida')
   }
 
   const removeProject = () => {
     if (confirm(`¿Borrar "${project.name}" con todas sus entregas y tareas? Las jornadas se conservan, sin proyecto.`)) {
       db.remove('projects', project.id)
+      ctx.notify('Proyecto borrado')
     }
   }
 

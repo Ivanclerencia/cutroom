@@ -56,7 +56,7 @@ function createSupabaseBackend() {
     update: async (table, id, patch) => check(await (await client()).from(table).update(patch).eq('id', id)),
     remove: async (table, id) => check(await (await client()).from(table).delete().eq('id', id)),
     upsert: async (table, row, onConflict) => check(await (await client()).from(table).upsert(row, { onConflict })),
-    subscribe(onChange) {
+    subscribe(onChange, onStatus = () => {}) {
       let sb
       let channel
       let cancelled = false
@@ -66,7 +66,7 @@ function createSupabaseBackend() {
         channel = c
           .channel('estudio')
           .on('postgres_changes', { event: '*', schema: 'public' }, (p) => onChange(p.table))
-          .subscribe()
+          .subscribe((status) => onStatus(status === 'SUBSCRIBED' ? 'live' : 'connecting'))
       })
       return () => {
         cancelled = true

@@ -21,13 +21,23 @@ export const clearDataCache = () => {
   } catch { /* sin almacenamiento */ }
 }
 
+// Valores que la base de datos pone por defecto; se aplican ya en pantalla
+const DEFAULTS = {
+  projects: { status: 'activo' },
+  deliveries: { status: 'pendiente' },
+  tasks: { done: false },
+  invoices: { status: 'pendiente' },
+}
+
 // Carga todas las tablas y las mantiene al día: cuando la otra persona
 // cambia algo, llega un aviso en tiempo real y se recarga esa tabla.
+// Los cambios propios se ven al instante (se guardan por detrás).
 export function useData(userId) {
   const [cached] = useState(() => readCache(userId))
   const [data, setData] = useState(cached ?? empty)
   const [loading, setLoading] = useState(!cached)
   const [error, setError] = useState(null)
+  const [live, setLive] = useState('connecting') // 'live' | 'connecting' | 'offline'
 
   const refresh = useCallback(async (table = '*') => {
     const tables = table === '*' ? TABLES : [table]
@@ -47,16 +57,22 @@ export function useData(userId) {
     if (!userId) return
     let alive = true
     refresh().then(() => alive && setLoading(false))
-    const unsubscribe = backend.subscribe((table) => refresh(TABLES.includes(table) ? table : '*'))
+    const unsubscribe = backend.subscribe(
+      (table) => refresh(TABLES.includes(table) ? table : '*'),
+      (status) => alive && setLive(status),
+    )
     // Por si se perdió algún aviso mientras el móvil/ordenador estaba en reposo
     const onFocus = () => refresh()
     const onVisible = () => document.visibilityState === 'visible' && refresh()
+    const onOffline = () => setLive('offline')
     window.addEventListener('focus', onFocus)
+    window.addEventListener('offline', onOffline)
     document.addEventListener('visibilitychange', onVisible)
     return () => {
       alive = false
       unsubscribe()
       window.removeEventListener('focus', onFocus)
+      window.removeEventListener('offline', onOffline)
       document.removeEventListener('visibilitychange', onVisible)
     }
   }, [userId, refresh])
@@ -65,15 +81,17 @@ export function useData(userId) {
     if (userId && !loading) writeCache(userId, data)
   }, [userId, loading, data])
 
-  // Envuelve una escritura: la ejecuta, recarga la tabla y muestra el error si falla
+  // Aplica el cambio en pantalla, lo guarda y recarga la tabla (o lo deshace si falla)
   const run = useCallback(
-    async (table, fn) => {
+    async (table, optimistic, save) => {
+      setData((prev) => optimistic(prev))
       try {
-        await fn()
-        await refresh(table)
+        await save()
+        refresh(table)
         return true
       } catch (e) {
         setError(e.message)
+        refresh('*')
         return false
       }
     },
@@ -81,11 +99,45 @@ export function useData(userId) {
   )
 
   const db = {
-    insert: (table, row) => run(table, () => backend.insert(table, row)),
-    update: (table, id, patch) => run(table, () => backend.update(table, id, patch)),
-    remove: (table, id) => run(table === 'projects' ? '*' : table, () => backend.remove(table, id)),
-    upsert: (table, row, onConflict) => run(table, () => backend.upsert(table, row, onConflict)),
+    insert: (table, row) => {
+      const owner = table === 'workdays' ? { user_id: userId } : {}
+      const full = { id: crypto.randomUUID(), ...DEFAULTS[table], ...owner, ...row }
+      return run(
+        table,
+        (d) => ({ ...d, [table]: [...d[table], { created_at: new Date().toISOString(), ...full }] }),
+        () => backend.insert(table, full),
+      )
+    },
+    update: (table, id, patch) => run(
+      table,
+      (d) => ({ ...d, [table]: d[table].map((r) => (r.id === id ? { ...r, ...patch } : r)) }),
+      () => backend.update(table, id, patch),
+    ),
+    remove: (table, id) => run(
+      table === 'projects' ? '*' : table,
+      (d) => {
+        const next = { ...d, [table]: d[table].filter((r) => r.id !== id) }
+        if (table === 'projects') {
+          next.deliveries = d.deliveries.filter((r) => r.project_id !== id)
+          next.tasks = d.tasks.filter((r) => r.project_id !== id)
+          next.workdays = d.workdays.map((w) => (w.project_id === id ? { ...w, project_id: null } : w))
+        }
+        return next
+      },
+      () => backend.remove(table, id),
+    ),
+    upsert: (table, row, onConflict = 'id') => run(
+      table,
+      (d) => {
+        const i = d[table].findIndex((r) => r[onConflict] === row[onConflict])
+        const rows = [...d[table]]
+        if (i === -1) rows.push({ ...DEFAULTS[table], ...row })
+        else rows[i] = { ...rows[i], ...row }
+        return { ...d, [table]: rows }
+      },
+      () => backend.upsert(table, row, onConflict),
+    ),
   }
 
-  return { data, loading, error, clearError: () => setError(null), db }
+  return { data, loading, error, clearError: () => setError(null), db, live, refresh }
 }
