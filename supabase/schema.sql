@@ -180,3 +180,6 @@ begin
     end if;
   end loop;
 end $$;
+
+-- Que la API vea los cambios al momento
+notify pgrst, 'reload schema';

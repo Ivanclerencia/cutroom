@@ -16,8 +16,15 @@ function createSupabaseBackend() {
   const client = () => (clientPromise ??= import('@supabase/supabase-js').then(({ createClient }) => createClient(url, key)))
 
   const check = ({ data, error }) => {
-    if (error) throw new Error(error.message)
-    return data
+    if (!error) return data
+    // Columna o tabla que aún no existe: falta ejecutar una migración en Supabase
+    if (error.code === '42703' || error.code === 'PGRST204' || /schema cache|does not exist/.test(error.message)) {
+      throw new Error('Falta actualizar la base de datos: ejecuta en Supabase el último archivo de supabase/migracion-*.sql')
+    }
+    if (error.code === '42501' || /row-level security/.test(error.message)) {
+      throw new Error('No tienes permiso para hacer esto')
+    }
+    throw new Error(error.message)
   }
 
   // Sesión guardada por Supabase en este dispositivo (lectura inmediata, sin red)

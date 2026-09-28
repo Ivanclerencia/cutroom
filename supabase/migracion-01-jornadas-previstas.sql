@@ -30,3 +30,6 @@ create policy "jornadas editor cambia previstas" on public.workdays for update t
 drop policy if exists "jornadas editor borra previstas" on public.workdays;
 create policy "jornadas editor borra previstas" on public.workdays for delete to authenticated
   using (not public.is_asistente() and status = 'prevista');
+
+-- Que la API vea las columnas nuevas al momento
+notify pgrst, 'reload schema';
