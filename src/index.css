@@ -904,6 +904,30 @@ label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color:
   }
   .mobile-top .brand-name { display: none; }
   .mobile-top .icon-round { width: 38px; height: 38px; }
+  /* Botones de arriba (tema y perfil): mismas burbujas de cristal que el menú */
+  .glass-bubble {
+    width: 44px; height: 44px; padding: 0; flex: none; display: grid; place-items: center; border-radius: 50%;
+    color: var(--text); font-size: 16px; font-weight: 600;
+    background:
+      radial-gradient(circle at 50% 18%, rgba(255, 255, 255, 0.55), transparent 45%),
+      radial-gradient(circle at 50% 100%, rgba(255, 255, 255, 0.35), transparent 55%),
+      rgba(255, 255, 255, 0.34);
+    backdrop-filter: blur(5px) saturate(180%); -webkit-backdrop-filter: blur(5px) saturate(180%);
+    box-shadow:
+      inset 0 0 0 1px rgba(255, 255, 255, 0.85),
+      inset 0 -8px 14px -6px rgba(0, 0, 0, 0.08),
+      inset 0 6px 10px -4px rgba(255, 255, 255, 0.7),
+      0 12px 28px -12px rgba(0, 0, 0, 0.35);
+    transition: transform 0.35s cubic-bezier(0.3, 1.5, 0.5, 1);
+  }
+  .glass-bubble:hover { opacity: 1; }
+  .glass-bubble:active { transform: scale(0.9); }
+  :root[data-theme='dark'] .glass-bubble {
+    background: radial-gradient(circle at 50% 18%, rgba(255, 255, 255, 0.14), transparent 45%), rgba(255, 255, 255, 0.07);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2), inset 0 6px 10px -4px rgba(255, 255, 255, 0.12), 0 12px 28px -12px rgba(0, 0, 0, 0.7);
+  }
+  .mobile-top .side-actions { gap: 10px; }
+
   /* Burbujas de cristal que se solapan; la activa es un círculo sólido */
   .bottom-nav {
     display: flex; align-items: center; justify-content: center;

@@ -10,7 +10,7 @@ import Cobros from './views/Cobros.jsx'
 import { ThemeToggle } from './theme.jsx'
 import { Brand, Avatar, HoverTip, InstallHint } from './components.jsx'
 import { Icon } from './icons.jsx'
-import { useToast, LivePill, SettingsSheet, useLock, LockScreen } from './chrome.jsx'
+import { useToast, SettingsSheet, useLock, LockScreen } from './chrome.jsx'
 import { useBootSplash } from './burning.jsx'
 import { weekday, shortDate, today } from './lib/dates.js'
 
@@ -49,7 +49,7 @@ export default function App() {
 }
 
 function Shell({ user }) {
-  const { data, loading, error, clearError, db, live, refresh, isMine } = useData(user.id)
+  const { data, loading, error, clearError, db, isMine } = useData(user.id)
   const [tab, setTab] = useState(() => {
     try { return localStorage.getItem('estudio-tab') || 'inicio' } catch { return 'inicio' }
   })
@@ -145,10 +145,6 @@ function Shell({ user }) {
   }
 
   const role = isAsistente ? 'Asistente' : 'Editor'
-  const refreshAll = async () => {
-    await refresh()
-    notify('Actualizado')
-  }
 
   return (
     <div className="app">
@@ -166,7 +162,6 @@ function Shell({ user }) {
           ))}
         </nav>
         <div className="side-foot">
-          <LivePill status={live} onRefresh={refreshAll} />
           <button className="side-user" onClick={() => setSettings(true)} title="Ajustes">
             <Avatar profile={me} />
             <span className="me-name">{me.name}<small>{role}</small></span>
@@ -184,12 +179,11 @@ function Shell({ user }) {
       <header className="mobile-top">
         <div className="mobile-left">
           <Brand name={APP_NAME} />
-          <LivePill status={live} onRefresh={refreshAll} />
         </div>
         <div className="side-actions">
-          <ThemeToggle />
-          <button className="avatar-btn" onClick={() => setSettings(true)} aria-label="Ajustes">
-            <Avatar profile={me} />
+          <ThemeToggle glass />
+          <button className="glass-bubble avatar-bubble" onClick={() => setSettings(true)} aria-label="Ajustes">
+            {(me.name ?? '?').trim().slice(0, 1).toUpperCase()}
           </button>
         </div>
       </header>

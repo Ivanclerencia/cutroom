@@ -11,7 +11,7 @@ const readPref = () => {
 }
 const resolve = (pref) => (pref === 'system' ? (media().matches ? 'dark' : 'light') : pref)
 
-export function ThemeToggle() {
+export function ThemeToggle({ glass }) {
   const [theme, setTheme] = useState(() => resolve(readPref()))
 
   useEffect(() => {
@@ -37,7 +37,7 @@ export function ThemeToggle() {
 
   const label = theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'
   return (
-    <button className="icon-round theme-toggle" onClick={toggle} title={label} aria-label={label}>
+    <button className={glass ? 'glass-bubble theme-toggle' : 'icon-round theme-toggle'} onClick={toggle} title={label} aria-label={label}>
       {theme === 'dark' ? (
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
           <circle cx="12" cy="12" r="4.2" />
