@@ -271,32 +271,27 @@ function DeliveriesCard({ ctx, go }) {
   )
 }
 
-// Fecha, días que faltan y estado de la próxima entrega, en tres bloques visuales
+// Fecha, días que faltan y estado de la próxima entrega: solo tipografía, sin adornos
 const MONTHS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sept', 'oct', 'nov', 'dic']
+const WEEKDAYS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado']
 function NextTiles({ d, today: t }) {
   const date = parseISO(d.due_date)
   const n = daysBetween(t, d.due_date)
-  const urgency = n <= 1 ? 'urgent' : n <= 3 ? 'soon' : 'calm'
-  const fill = Math.max(8, 100 - (Math.min(n, 14) / 14) * 100) // se llena al acercarse (ventana de 2 semanas)
   return (
-    <div className="hero-tiles">
-      <div className="tile">
-        <span className="tile-label">Fecha</span>
-        <div className="tile-cal">
-          <span className="tc-wd">{weekday(d.due_date).replace('.', '')}</span>
-          <span className="tc-day">{date.getDate()}</span>
-          <span className="tc-mon">{MONTHS[date.getMonth()]}</span>
-        </div>
+    <div className="hero-facts">
+      <div>
+        <span>Fecha</span>
+        <strong>{date.getDate()} {MONTHS[date.getMonth()]}</strong>
+        <small>{WEEKDAYS[date.getDay()]}</small>
       </div>
-      <div className={`tile tile-count ${urgency}`}>
-        <span className="tile-label">Faltan</span>
-        <strong className="tile-big">{n === 0 ? 'Hoy' : n}</strong>
-        <span className="tile-sub">{n === 0 ? 'es el día' : n === 1 ? 'día' : 'días'}</span>
-        <div className="tile-bar"><i style={{ width: `${fill}%` }} /></div>
+      <div>
+        <span>Faltan</span>
+        <strong>{n === 0 ? 'Hoy' : n}</strong>
+        <small>{n === 0 ? 'es el día' : n === 1 ? 'día' : 'días'}</small>
       </div>
-      <div className={`tile tile-status tone-${d.status}`}>
-        <span className="tile-label">Estado</span>
-        <span className="tile-state"><i className="dot" />{DELIVERY_STATUS[d.status]}</span>
+      <div>
+        <span>Estado</span>
+        <strong>{DELIVERY_STATUS[d.status]}</strong>
       </div>
     </div>
   )
