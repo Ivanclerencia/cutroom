@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import {
-  today, monthOf, monthName, daysBetween, money, jornadas, weekday, shortDate, longDate, parseISO, toISO, addDays,
+  today, monthOf, monthName, addMonths, daysBetween, money, jornadas, weekday, shortDate, longDate, parseISO, toISO, addDays,
 } from '../lib/dates.js'
 import { ProjectTag, DueLabel, TaskRow, DELIVERY_STATUS, WorkdayForm, PillSelect, deliveryTip, tasksTip, dayTip, WorkChip, PlannedRow } from '../components.jsx'
 import { Icon } from '../icons.jsx'
@@ -39,8 +39,17 @@ export default function Inicio({ ctx, go }) {
   const monthDays = data.workdays.filter((w) => monthOf(w.date) === month && w.user_id === asistente?.id)
   const total = monthDays.reduce((s, w) => s + Number(w.amount), 0)
   const rate = Number(data.settings[0]?.day_rate) || 0
-  const recent = [...monthDays].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 4)
-  const capacity = workingDays(month)
+  // Tarjeta del mes: se puede pasar a otros meses para ver las jornadas ya apuntadas
+  const [monthOffset, setMonthOffset] = useState(0)
+  const cardMonth = addMonths(month, monthOffset)
+  const cardDays = data.workdays
+    .filter((w) => monthOf(w.date) === cardMonth && w.user_id === asistente?.id)
+    .sort((a, b) => a.date.localeCompare(b.date))
+  const cardTotal = cardDays.reduce((s, w) => s + Number(w.amount), 0)
+  const capacity = workingDays(cardMonth)
+  const upcoming = data.workdays
+    .filter((w) => w.user_id === asistente?.id && w.date >= t)
+    .sort((a, b) => a.date.localeCompare(b.date))
 
   return (
     <div className="page">
@@ -98,28 +107,39 @@ export default function Inicio({ ctx, go }) {
 
         <section className="card">
           <div className="card-head">
-            <h3>{monthName(month)}</h3>
+            <div className="month-step">
+              <button className="ghost small" onClick={() => setMonthOffset(monthOffset - 1)} aria-label="Mes anterior">‹</button>
+              <h3>{monthName(cardMonth)}</h3>
+              <button className="ghost small" onClick={() => setMonthOffset(monthOffset + 1)} aria-label="Mes siguiente">›</button>
+            </div>
             {isAsistente && !adding
               ? <button className="chip-btn mobile-only" onClick={() => setAdding(true)}>+ Apuntar</button>
               : null}
             <button className="link desktop-only" onClick={() => go('jornadas')}>Ver todo</button>
           </div>
           <div className="big-number">
-            {num(total)}<small>/{capacity}</small>
+            {num(cardTotal)}<small>/{capacity}</small>
           </div>
-          <div className="meter"><i style={{ width: `${Math.min(100, (total / capacity) * 100)}%` }} /></div>
+          <div className="meter"><i style={{ width: `${Math.min(100, (cardTotal / capacity) * 100)}%` }} /></div>
           <p className="muted small">
-            {isAsistente ? `${money(total * rate)} · ${money(rate)}/jornada` : `jornadas de ${asistente?.name ?? 'asistente'} sobre ${capacity} laborables`}
+            {isAsistente ? `${money(cardTotal * rate)} · ${money(rate)}/jornada` : `jornadas de ${asistente?.name ?? 'asistente'} sobre ${capacity} laborables`}
           </p>
-          {recent.length > 0 && (
+          {cardDays.length === 0 && <p className="empty small">Sin jornadas este mes.</p>}
+          {cardDays.length > 0 && (
             <ul className="mini-list">
-              {recent.map((w) => (
+              {cardDays.map((w) => (
                 <li key={w.id}>
                   <span className="capitalize">{weekday(w.date)} {shortDate(w.date)}</span>
                   <span className="muted">{w.amount == 1 ? 'Completa' : 'Media'}</span>
                 </li>
               ))}
             </ul>
+          )}
+          {upcoming.length > 0 && (
+            <p className="upcoming small">
+              Próximas: {upcoming.slice(0, 3).map((w) => `${weekday(w.date).replace('.', '')} ${shortDate(w.date)}`).join(' · ')}
+              {upcoming.length > 3 ? ` y ${upcoming.length - 3} más` : ''}
+            </p>
           )}
           {isAsistente && (adding
             ? <WorkdayForm ctx={ctx} onDone={() => setAdding(false)} />

@@ -281,6 +281,10 @@ label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color:
 .stack { display: flex; flex-direction: column; gap: 12px; }
 
 /* Barra fina ámbar (como las líneas de la referencia) */
+.month-step { display: flex; align-items: center; gap: 4px; }
+.month-step h3 { min-width: 132px; text-align: center; }
+.month-step button.ghost { width: 30px; height: 30px; padding: 0; display: grid; place-items: center; font-size: 16px; }
+.upcoming { color: var(--muted); }
 .meter { height: 4px; border-radius: 99px; background: var(--surface-3); overflow: hidden; }
 .meter i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--warm), var(--warm-2)); }
 
