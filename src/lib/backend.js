@@ -27,6 +27,28 @@ function createSupabaseBackend() {
     throw new Error(error.message)
   }
 
+  // Errores pasajeros de la sesión: justo tras renovarla, los servidores de Supabase pueden
+  // tener los relojes desfasados un segundo ("JWT issued at future"), o el pase acaba de
+  // caducar. Se reintenta solo, sin molestar, antes de mostrar nada.
+  const TRANSIENT = /JWT issued at future|JWT expired|jwt expired|Failed to fetch|NetworkError|Load failed/i
+  const call = async (query) => {
+    for (let attempt = 0; ; attempt++) {
+      const sb = await client()
+      let res
+      try {
+        res = await query(sb)
+      } catch (e) {
+        res = { error: { message: e.message } }
+      }
+      if (res.error && TRANSIENT.test(res.error.message) && attempt < 3) {
+        if (/expired/i.test(res.error.message)) await sb.auth.refreshSession().catch(() => {})
+        await new Promise((r) => setTimeout(r, 700 * (attempt + 1)))
+        continue
+      }
+      return check(res)
+    }
+  }
+
   // Sesión guardada por Supabase en este dispositivo (lectura inmediata, sin red)
   const storageKey = `sb-${new URL(url).hostname.split('.')[0]}-auth-token`
   const peekUser = () => {
@@ -58,11 +80,11 @@ function createSupabaseBackend() {
     async signOut() {
       await (await client()).auth.signOut()
     },
-    fetchAll: async (table) => check(await (await client()).from(table).select('*')),
-    insert: async (table, row) => check(await (await client()).from(table).insert(row)),
-    update: async (table, id, patch) => check(await (await client()).from(table).update(patch).eq('id', id)),
-    remove: async (table, id) => check(await (await client()).from(table).delete().eq('id', id)),
-    upsert: async (table, row, onConflict) => check(await (await client()).from(table).upsert(row, { onConflict })),
+    fetchAll: (table) => call((sb) => sb.from(table).select('*')),
+    insert: (table, row) => call((sb) => sb.from(table).insert(row)),
+    update: (table, id, patch) => call((sb) => sb.from(table).update(patch).eq('id', id)),
+    remove: (table, id) => call((sb) => sb.from(table).delete().eq('id', id)),
+    upsert: (table, row, onConflict) => call((sb) => sb.from(table).upsert(row, { onConflict })),
     subscribe(onChange, onStatus = () => {}) {
       let sb
       let channel
